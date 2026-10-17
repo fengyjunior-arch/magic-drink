@@ -1044,7 +1044,9 @@ const EMBLEMAS = [
 function emblemasBlock() {
   return `<section class="emblemas">
     <h2 class="display" style="font-size:22px">Emblemas: Elixir's Power</h2>
-    <p>Cartas especiais do Magic Drink que os jogadores usam durante as partidas. Cada cor tem três habilidades, e cada habilidade custa uma dose de elixir e só pode ser usada uma vez por partida. Toque numa carta para ver em tamanho grande.</p>
+    <p>O Emblema dos bravos que transformam jogadas em lendas e derrotas em histórias inesquecíveis.</p>
+    <p>Mas todo poder tem seu preço: cada habilidade exige uma dose de Elixir, e cada novo poder custa ainda mais caro!</p>
+    <p class="muted small">Toque numa carta para ampliar.</p>
     <div class="emb-grid">${EMBLEMAS.map((e, i) => `<button class="emb-card" type="button" data-emb="${i}" aria-label="Ampliar emblema ${e.n}"><img src="emblemas/${e.k}-mini.jpg" alt="Emblema Elixir's Power ${e.n}" width="400" height="560" loading="lazy"></button>`).join('')}</div>
   </section>`;
 }
