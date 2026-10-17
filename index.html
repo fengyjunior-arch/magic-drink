@@ -146,13 +146,21 @@ textarea { min-height: 96px; resize: vertical; line-height: 1.45; }
 .check { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; cursor: pointer; }
 
 /* abertura da divulgação: bloco laranja com o próximo evento num cartão preto */
-.home-top { display: grid; gap: 16px; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); align-items: stretch; }
+.home-top { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+.emblemas { background: var(--surface); border-radius: 14px; padding: 24px; display: grid; gap: 14px; }
+.emblemas p { margin: 0; max-width: 70ch; }
+.emb-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.emb-card { padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: 10px; overflow: hidden; transition: transform .15s; }
+.emb-card img { display: block; width: 100%; height: auto; aspect-ratio: 2010 / 2814; }
+.emb-card:hover { transform: translateY(-4px); }
+@media (max-width: 640px) { .emb-grid { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; } .emb-card { flex: 0 0 128px; scroll-snap-align: start; } }
+.emb-lb .stage img { border-radius: 14px; cursor: zoom-out; }
 .hero { background: var(--surface); border-radius: 14px; padding: 28px; display: grid; align-items: center; }
 .hero h1 { font-family: var(--f-display); font-weight: 900; font-size: clamp(32px, 5vw, 50px); }
 .hero p { margin: 0; max-width: 60ch; }
 .next { background: var(--surface); color: var(--ink); border-radius: 14px; padding: 22px; display: grid; gap: 8px; align-content: start; }
 .next .eyebrow { color: var(--accent); }
-@media (max-width: 760px) { .home-top { grid-template-columns: 1fr; } .hero { padding: 20px; } }
+@media (max-width: 760px) { .hero { padding: 20px; } .emblemas { padding: 20px; } }
 .mana { display: flex; gap: 6px; }
 .mana i { width: 14px; height: 14px; border-radius: 50%; display: block; }
 
@@ -300,7 +308,7 @@ const S = {
   events: {}, formats: {}, regs: {}, myReg: null,
   view: 'home', eventId: null, tab: 'info', formatId: null, newEvent: false,
   installHidden: (() => { try { return sessionStorage.getItem('md-install-hide') === '1'; } catch (e) { return false; } })(),
-  armed: null, pendingRender: false, assets: null, media: [], mediaSub: null, lightbox: null, uploading: '',
+  armed: null, pendingRender: false, assets: null, media: [], mediaSub: null, lightbox: null, emblema: null, uploading: '',
 };
 
 // ---------- armazenamento (db compartilhado, ou local quando indisponível) ----------
@@ -514,8 +522,8 @@ function render() {
     else html += viewHome();
   }
   app.innerHTML = html;
-  const lbKey = S.lightbox ? S.lightbox + '|' + S.armed + '|' + S.media.length + '|' + S.admin : '';
-  if (lbKey !== S.lbKey) { S.lbKey = lbKey; $('#lb').innerHTML = S.lightbox ? lightboxHtml() : ''; }
+  const lbKey = S.emblema != null ? 'emb' + S.emblema : S.lightbox ? S.lightbox + '|' + S.armed + '|' + S.media.length + '|' + S.admin : '';
+  if (lbKey !== S.lbKey) { S.lbKey = lbKey; $('#lb').innerHTML = S.emblema != null ? emblemaHtml() : S.lightbox ? lightboxHtml() : ''; }
   tickClock();
   if (S.view === 'event' && S.tab === 'divulgar') paintFlyer();
 }
@@ -610,6 +618,7 @@ function viewHome() {
       <p>O torneio mais caótico e lendário da comunidade, onde sua habilidade de jogar é tão importante quanto sua resistência ao Elixir Sagrado.</p>
       ${S.admin ? `<div class="row"><button class="btn primary" data-act="new-event">Criar evento</button><button class="btn" data-nav="formats">Formatos e regras</button></div>` : ''}
     </div></section>
+    ${emblemasBlock()}
     <section class="next">${next ? `
       <div class="eyebrow">Próximo evento</div>
       <div class="display" style="font-size:22px;font-weight:800">${esc(next.nome)}</div>
@@ -1030,6 +1039,23 @@ function tabMedia(e) {
     <span class="badge">${m.rodada ? 'R' + m.rodada + ' · ' : ''}${horaDe(m.em)}</span></button>`).join('')}</div>`;
   return h;
 }
+const EMBLEMAS = [
+  { k: 'vermelho', n: 'Vermelho' }, { k: 'branco', n: 'Branco' }, { k: 'preto', n: 'Preto' }, { k: 'verde', n: 'Verde' }, { k: 'azul', n: 'Azul' }];
+function emblemasBlock() {
+  return `<section class="emblemas">
+    <h2 class="display" style="font-size:22px">Emblemas: Elixir's Power</h2>
+    <p>Cartas especiais do Magic Drink que os jogadores usam durante as partidas. Cada cor tem três habilidades, e cada habilidade custa uma dose de elixir e só pode ser usada uma vez por partida. Toque numa carta para ver em tamanho grande.</p>
+    <div class="emb-grid">${EMBLEMAS.map((e, i) => `<button class="emb-card" type="button" data-emb="${i}" aria-label="Ampliar emblema ${e.n}"><img src="emblemas/${e.k}-mini.jpg" alt="Emblema Elixir's Power ${e.n}" width="400" height="560" loading="lazy"></button>`).join('')}</div>
+  </section>`;
+}
+function emblemaHtml() {
+  const i = S.emblema, e = EMBLEMAS[i];
+  return `<div class="lightbox emb-lb" role="dialog" aria-label="Emblema ${e.n}">
+    <div class="spread"><span class="small">Emblema ${e.n} · ${i + 1} de ${EMBLEMAS.length}</span>
+      <div class="row">${i > 0 ? '<button class="btn sm" data-embnav="-1">Anterior</button>' : ''}${i < EMBLEMAS.length - 1 ? '<button class="btn sm" data-embnav="1">Próximo</button>' : ''}<button class="btn sm" data-embclose>Fechar</button></div></div>
+    <div class="stage" data-embclose><img src="emblemas/${e.k}.jpg" alt="Emblema Elixir's Power ${e.n}"></div>
+  </div>`;
+}
 function lightboxHtml() {
   const i = S.media.findIndex(m => m.id === S.lightbox); if (i < 0) return '';
   const m = S.media[i];
@@ -1356,13 +1382,16 @@ function readList(e) {
 document.addEventListener('click', async ev0 => {
   if (ev0.target.closest('#fab')) { S.menuOpen = !S.menuOpen; renderNav(); if (S.menuOpen) { const b = $('#nav button'); if (b) b.focus(); } return; }
   if (S.menuOpen) { S.menuOpen = false; renderNav(); }
-  const t = ev0.target.closest('[data-nav],[data-open],[data-tab],[data-act],[data-approve],[data-drop],[data-editfmt],[data-copy],[data-lightbox],[data-lbnav],[data-lbclose],[data-perfil],[data-tvexit],#brand');
+  const t = ev0.target.closest('[data-nav],[data-open],[data-tab],[data-act],[data-approve],[data-drop],[data-editfmt],[data-copy],[data-lightbox],[data-lbnav],[data-lbclose],[data-emb],[data-embnav],[data-embclose],[data-perfil],[data-tvexit],#brand');
   if (!t) return;
   if (t.id === 'brand') { S.view = 'home'; render(); return; }
   if (t.dataset.nav) { S.view = t.dataset.nav; S.newEvent = false; render(); window.scrollTo(0, 0); return; }
   if (t.dataset.open) { ev0.preventDefault(); S.view = 'event'; S.eventId = t.dataset.open; S.tab = 'info'; watchMedia(S.eventId); render(); window.scrollTo(0, 0); return; }
   if (t.dataset.perfil) { ev0.preventDefault(); S.view = 'perfil'; S.perfil = t.dataset.perfil; render(); window.scrollTo(0, 0); return; }
   if (t.hasAttribute('data-tvexit')) { if (/^#telao\//.test(location.hash)) history.replaceState(null, '', location.pathname); S.view = ev() ? 'event' : 'home'; render(); return; }
+  if (t.dataset.emb) { S.emblema = +t.dataset.emb; render(); return; }
+  if (t.dataset.embnav) { const i = S.emblema + +t.dataset.embnav; if (EMBLEMAS[i]) S.emblema = i; render(); return; }
+  if (t.hasAttribute('data-embclose')) { S.emblema = null; render(); return; }
   if (t.dataset.lightbox) { S.lightbox = t.dataset.lightbox; render(); return; }
   if (t.dataset.lbnav) { const i = S.media.findIndex(m => m.id === S.lightbox) + +t.dataset.lbnav; if (S.media[i]) S.lightbox = S.media[i].id; render(); return; }
   if (t.hasAttribute('data-lbclose')) { S.lightbox = null; render(); return; }
@@ -1609,6 +1638,7 @@ document.addEventListener('submit', async ev0 => {
 
 document.addEventListener('keydown', k => {
   if (k.key === 'Escape' && S.menuOpen) { S.menuOpen = false; renderNav(); $('#fab').focus(); return; }
+  if (k.key === 'Escape' && S.emblema != null) { S.emblema = null; render(); return; }
   if (k.key === 'Escape' && S.lightbox) { S.lightbox = null; render(); }
 });
 
