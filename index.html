@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: fundo preto; no topo só a logo dourada e os cinco símbolos de mana; blocos em moldura de carta de Magic, com destaques dourados. Visual único (não muda com o tema do aparelho). */
+/* Layout: fundo preto, sem topo; a logo dourada e os cinco símbolos de mana ficam no bloco da comunidade; blocos em moldura de carta de Magic, com destaques dourados. Visual único (não muda com o tema do aparelho). */
 :root {
   --brand: #f6b210; --brand-ink: #111111;
   --bg: #000000; --surface: #100e0b; --surface-2: #1e1a13; --ink: #f1e9d6; --muted: #aca28c; --line: #322a1d;
@@ -59,16 +59,11 @@ h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.15; }
 .mono, .num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
 
 .wubrg { display: block; height: 4px; background: var(--wubrg); }
-/* topo: só a logo dourada sobre o fundo preto, com um filete e os cinco símbolos de mana */
-.masthead { display: grid; justify-items: center; gap: 10px; padding: 22px 16px 0; background: radial-gradient(260px 150px at 50% 70px, rgba(246, 178, 16, .16), transparent 75%); }
-.masthead .rule { display: flex; align-items: center; gap: 10px; width: min(560px, 100%); }
-.masthead .rule::before, .masthead .rule::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(246, 178, 16, .75)); }
-.masthead .rule::after { background: linear-gradient(90deg, rgba(246, 178, 16, .75), transparent); }
+.hero-brand { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.hero-brand img { height: 96px; width: auto; filter: drop-shadow(0 0 16px rgba(246, 178, 16, .25)); }
+@media (max-width: 560px) { .hero-brand img { height: 76px; } }
 .top-in, .wrap { max-width: 1080px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .top-in { display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; padding-block: 8px; }
-.brand { display: block; background: none; border: 0; padding: 0; cursor: pointer; }
-.brand img { height: 112px; width: auto; display: block; filter: drop-shadow(0 0 18px rgba(246, 178, 16, .25)); }
-@media (max-width: 560px) { .brand img { height: 84px; } }
 /* menu em botão flutuante */
 .fab { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 15; width: 60px; height: 60px; border-radius: 50%; border: 2px solid #111111; background: var(--brand); color: #111111; display: grid; place-items: center; cursor: pointer; box-shadow: 0 6px 18px rgba(0, 0, 0, .55); }
 .fab svg { width: 28px; height: 28px; }
@@ -112,7 +107,6 @@ body.tv .fab, body.tv .fab-menu { display: none; }
 .chip.draft { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
 .chip.gold { background: var(--gold-soft); color: var(--gold); border-color: transparent; }
 .chip.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
-body.tv .masthead { display: none; }
 body.tv #app { max-width: none; padding: 20px clamp(16px, 2.5vw, 40px); }
 .tv-head { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
 .tv-head img { height: clamp(60px, 9vw, 120px); width: auto; }
@@ -273,10 +267,6 @@ section h2.display::after { content: ""; flex: 1; height: 1px; background: linea
 
 </head>
 <body>
-<header class="masthead">
-  <button class="brand" id="brand" type="button" aria-label="Magic Drink, início"><img src="logo-ouro.png" alt="Magic Drink" width="440" height="450"></button>
-  <div class="rule" id="masthead-mana"></div>
-</header>
 <main class="wrap" id="app"></main>
 <nav class="fab-menu" id="nav" aria-label="Menu" hidden></nav>
 <button class="fab" id="fab" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="nav"></button>
@@ -649,6 +639,7 @@ function viewHome() {
   const next = upcoming[0];
   let h = `<section class="hero">
     <div class="stack">
+      <div class="hero-brand"><img src="logo-ouro.png" alt="Magic Drink" width="440" height="450">${manaPips(['w', 'u', 'b', 'r', 'g'])}</div>
       <div class="eyebrow">Comunidade de Magic: The Gathering</div>
       <h1>Torneios, cartas e drinks</h1>
       <p>Encontros da comunidade do estado para jogar vários formatos de Magic com regras próprias. Veja os próximos eventos, as regras de cada formato, os pareamentos ao vivo e a classificação.</p>
@@ -670,9 +661,6 @@ function viewHome() {
   if (past.length) h += `<section class="stack"><h2 class="display" style="font-size:22px">Eventos anteriores</h2><div class="grid3">${past.map(evCard).join('')}</div></section>`;
   return h;
 }
-// ---------- topo ----------
-document.getElementById('masthead-mana').innerHTML = manaPips(['w', 'u', 'b', 'r', 'g']);
-
 // ---------- instalar como app ----------
 let installPrompt = null;
 const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
