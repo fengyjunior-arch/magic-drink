@@ -534,6 +534,7 @@ function renderNav() {
   if (S.admin) items.push(['admin', 'Organizar'], ['formats', 'Formatos e regras']);
   items.push(['ranking', 'Ranking']);
   $('#nav').innerHTML = items.map(([v, l]) => `<button data-nav="${v}" aria-current="${S.view === v || (v === 'home' && S.view === 'event' && !S.admin)}">${l}</button>`).join('')
+    + (S.admin ? '<button data-act="new-event">Criar evento</button>' : '')
     + (window.MD_AUTH && S.mode === 'db' ? (S.admin ? '<button data-act="logout">Sair</button>' : `<button data-nav="login" aria-current="${S.view === 'login'}">Organizador</button>`) : '');
   $('#nav').hidden = !S.menuOpen;
   const fab = $('#fab');
@@ -616,7 +617,6 @@ function viewHome() {
   let h = `<div class="home-top"><section class="hero">
     <div class="stack">
       <p>O torneio mais caótico e lendário da comunidade, onde sua habilidade de jogar é tão importante quanto sua resistência ao Elixir Sagrado.</p>
-      ${S.admin ? `<div class="row"><button class="btn primary" data-act="new-event">Criar evento</button><button class="btn" data-nav="formats">Formatos e regras</button></div>` : ''}
     </div></section>
     ${emblemasBlock()}
     <section class="next">${next ? `
