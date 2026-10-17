@@ -1,0 +1,1204 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Magic Drink: torneios de Magic: The Gathering da comunidade. Eventos, inscrições, mesas ao vivo e classificação.">
+<meta property="og:title" content="Magic Drink">
+<meta property="og:description" content="Torneios de Magic: The Gathering. Veja os eventos e faça sua inscrição.">
+<meta property="og:image" content="logo-laranja.png">
+<meta name="theme-color" content="#f6b210">
+<link rel="icon" href="logo-laranja.png">
+<title>Magic Drink</title>
+<style>html,body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,600..900,0..100&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: topo laranja com a logo laranja; corpo laranja; conteúdo em blocos pretos com texto claro e destaques em laranja. Visual único (não muda com o tema do aparelho). */
+:root {
+  --brand: #f6b210; --brand-ink: #111111;
+  --bg: #000000; --surface: #111111; --surface-2: #1f1f1f; --ink: #f4f1ec; --muted: #a9a29a; --line: #2e2b28;
+  --accent: #f6b210; --accent-soft: #33270a; --gold: #f6b210; --gold-soft: #33270a;
+  --btn-bg: transparent; --btn-fg: #f4f1ec; --btn-line: #4a4540; --btnp-bg: #f6b210; --btnp-fg: #111111;
+  --field-bg: #fff8ea; --field-ink: #111111; --field-line: #c9a24a;
+  --ok: #5cc895; --ok-soft: #15301f; --warn: #f6b210; --warn-soft: #33270a; --bad: #f08a80; --bad-soft: #3c1a18;
+  --mana-w: #f2ead0; --mana-u: #2f6fb3; --mana-b: #3e3646; --mana-r: #c8402f; --mana-g: #2a7d4f;
+  --f-display: "Fraunces", "Cooper Black", Georgia, serif;
+  --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --r: 10px;
+  color-scheme: dark;
+}
+/* blocos pretos: os mesmos tokens, redefinidos para texto claro sobre preto */
+.panel, .evcard, .hero, .bm, .banner, .champ {
+  --surface: #111111; --surface-2: #1f1f1f; --ink: #f4f1ec; --muted: #a9a29a; --line: #2e2b28;
+  --accent: #f6b210; --accent-soft: #33270a; --gold: #f6b210; --gold-soft: #33270a;
+  --btn-fg: #f4f1ec; --btn-line: #4a4540; --btnp-bg: #f6b210; --btnp-fg: #111111;
+  --ok: #5cc895; --ok-soft: #15301f; --warn: #f6b210; --warn-soft: #33270a; --bad: #f08a80; --bad-soft: #3c1a18;
+  color: var(--ink); border: 1px solid #2a2a2a;
+}
+/* cartão laranja dentro de um bloco preto */
+.hero .next {
+  --surface: #f6b210; --surface-2: rgba(255, 255, 255, .28); --ink: #111111; --muted: rgba(17, 17, 17, .72); --line: rgba(17, 17, 17, .25);
+  --accent: #111111; --accent-soft: rgba(17, 17, 17, .12); --btnp-bg: #111111; --btnp-fg: #f6b210; --ok: #0b5a31; --ok-soft: rgba(255, 255, 255, .4);
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--brand); }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.15; }
+.display, .hero h1, .evhead h1, .evcard h3 { font-variation-settings: "SOFT" 100, "WONK" 0; }
+.mono, .num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--brand); color: var(--brand-ink); border-bottom: 2px solid #111111; }
+.top-in, .wrap { max-width: 1080px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.top-in { display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; padding-block: 8px; }
+.brand { display: block; background: none; border: 0; padding: 0; cursor: pointer; }
+.brand img { height: 76px; width: auto; display: block; }
+@media (max-width: 560px) { .brand img { height: 60px; } }
+.nav { display: flex; gap: 4px; flex-wrap: wrap; margin-left: auto; }
+.nav button { background: none; border: 0; padding: 7px 12px; border-radius: 999px; cursor: pointer; color: #111111; font-weight: 700; }
+.nav button[aria-current="true"] { background: #111111; color: var(--brand); }
+.nav button:hover { background: rgba(17, 17, 17, .12); }
+.nav button[aria-current="true"]:hover { background: #111111; }
+.top :focus-visible { outline-color: #111111; }
+
+.wrap { padding-block: 24px 64px; display: grid; gap: 24px; }
+.banner { background: var(--surface); border-radius: var(--r); padding: 10px 14px; font-size: 14px; font-weight: 600; }
+
+.eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.display { font-family: var(--f-display); font-weight: 700; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.spread { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+.stack { display: grid; gap: 12px; }
+.grid2 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+.grid3 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+.panel { background: var(--surface); border-radius: var(--r); padding: 18px; min-width: 0; }
+.panel h3 { font-size: 16px; margin-bottom: 10px; }
+
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--btn-line); background: var(--btn-bg); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 700; text-decoration: none; color: var(--btn-fg); }
+.btn:hover { border-color: var(--btn-fg); }
+.btn.primary { background: var(--btnp-bg); border-color: var(--btnp-bg); color: var(--btnp-fg); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { color: var(--bad); }
+.btn.danger.armed { background: var(--bad); border-color: var(--bad); color: #ffffff; }
+.btn.sm { padding: 4px 10px; font-size: 13px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); white-space: nowrap; }
+.chip.open { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+.chip.live { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.chip.draft { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+.chip.gold { background: var(--gold-soft); color: var(--gold); border-color: transparent; }
+.pip { width: 9px; height: 9px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,.15); }
+
+label.f { display: grid; gap: 4px; font-size: 13px; font-weight: 600; color: var(--muted); min-width: 0; }
+input[type=text], input[type=number], input[type=date], input[type=time], select, textarea {
+  width: 100%; background: var(--field-bg); border: 1px solid var(--field-line); border-radius: 8px; padding: 8px 10px; color: var(--field-ink); font-weight: 400; min-width: 0; color-scheme: light; }
+textarea { min-height: 96px; resize: vertical; line-height: 1.45; }
+.form { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+.form .wide { grid-column: 1 / -1; }
+.check { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; cursor: pointer; }
+
+/* abertura da divulgação: bloco laranja com o próximo evento num cartão preto */
+.hero { background: var(--surface); border-radius: 14px; padding: 28px; display: grid; gap: 24px; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); align-items: center; }
+.hero h1 { font-family: var(--f-display); font-weight: 900; font-size: clamp(32px, 5vw, 50px); }
+.hero p { margin: 0; max-width: 60ch; }
+.hero .next { background: var(--surface); color: var(--ink); border-radius: var(--r); padding: 18px; display: grid; gap: 8px; align-content: start; }
+.hero .next .eyebrow { color: var(--accent); }
+@media (max-width: 760px) { .hero { grid-template-columns: 1fr; padding: 20px; } }
+.mana { display: flex; gap: 6px; }
+.mana i { width: 14px; height: 14px; border-radius: 50%; display: block; }
+
+.evcard { display: grid; gap: 10px; text-align: left; cursor: pointer; background: var(--surface); border: 2px solid var(--surface); border-radius: var(--r); padding: 16px; color: var(--ink); }
+.evcard:hover { border-color: var(--brand); }
+.evcard h3 { font-family: var(--f-display); font-size: 19px; font-weight: 800; }
+.datebox { display: grid; place-items: center; width: 54px; height: 58px; border-radius: 8px; background: var(--btnp-bg); color: var(--btnp-fg); flex: none; line-height: 1; }
+.datebox b { font-size: 22px; font-family: var(--f-mono); }
+.datebox span { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; font-weight: 700; }
+.bar { height: 6px; background: var(--surface-2); border-radius: 99px; overflow: hidden; border: 1px solid var(--line); }
+.bar i { display: block; height: 100%; background: var(--btnp-bg); }
+
+/* abas do evento */
+.evhead { display: grid; gap: 8px; }
+.evhead h1 { font-family: var(--f-display); font-weight: 900; font-size: clamp(26px, 4vw, 40px); }
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 14px; cursor: pointer; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; color: inherit; }
+th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tr.me td { background: var(--gold-soft); }
+td.r, th.r { text-align: right; }
+
+.match { display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.match:last-child { border-bottom: 0; }
+.match.me { background: var(--gold-soft); }
+.mesa { font-family: var(--f-mono); font-size: 12px; color: var(--muted); text-transform: uppercase; }
+.mesa b { display: block; font-size: 18px; color: var(--ink); }
+.vs { display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; min-width: 0; }
+.vs .pl { font-weight: 600; }
+.vs .pl.win { color: var(--ok); }
+.vs .x { color: var(--muted); font-size: 12px; }
+.pod { display: flex; gap: 6px 14px; flex-wrap: wrap; }
+.pod span { font-weight: 600; }
+.pod small { font-family: var(--f-mono); color: var(--muted); margin-right: 3px; }
+@media (max-width: 560px) { .match { grid-template-columns: 40px minmax(0, 1fr); } .match > :last-child { grid-column: 2; } }
+
+.clock { font-family: var(--f-mono); font-size: 28px; font-weight: 500; letter-spacing: .02em; }
+.clock.over { color: var(--bad); }
+
+/* chave */
+.bracket { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 8px; }
+.bcol { display: flex; flex-direction: column; justify-content: space-around; gap: 12px; min-width: 200px; }
+.bcol h4 { margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.bm { border-radius: 8px; background: var(--surface); overflow: hidden; font-size: 14px; }
+.bm div { padding: 6px 10px; display: flex; justify-content: space-between; gap: 8px; }
+.bm div + div { border-top: 1px solid var(--line); }
+.bm .w { font-weight: 700; color: var(--ok); }
+.bm .tbd { color: var(--muted); font-style: italic; }
+.champ { display: flex; gap: 12px; align-items: center; background: var(--surface); color: var(--ink); border-radius: var(--r); padding: 14px 18px; font-weight: 700; }
+.champ b { font-family: var(--f-display); font-weight: 900; font-size: 24px; color: var(--brand-ink); }
+
+.rules ol { margin: 0; padding-left: 22px; display: grid; gap: 6px; }
+.gallery { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); }
+.tile { position: relative; aspect-ratio: 1; max-width: 100%; border-radius: 8px; overflow: hidden; background: var(--surface-2); border: 1px solid var(--line); cursor: pointer; padding: 0; display: block; width: 100%; }
+.tile img, .tile video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tile .badge { position: absolute; left: 8px; bottom: 8px; background: rgba(0,0,0,.72); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+.tile .play { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.tile .play i { width: 46px; height: 46px; border-radius: 50%; background: #f6b210; display: grid; place-items: center; }
+.uploader { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.uploader label.btn { cursor: pointer; }
+.uploader input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.lightbox { position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,.92); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); color: #f4f1ec; }
+.lightbox .stage { display: grid; place-items: center; min-height: 0; }
+.lightbox img, .lightbox video { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; }
+.lightbox .btn { background: #1d1d1d; color: #f4f1ec; border-color: #3a3a3a; }
+.lightbox .btn.danger { color: #f08a80; }
+.lightbox .btn.danger.armed { background: #b3261e; color: #fff; }
+.lightbox input[type=text] { background: #1d1d1d; color: #f4f1ec; border-color: #3a3a3a; }
+.flyer-wrap { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+#flyer { width: min(100%, 360px); height: auto; border-radius: 8px; border: 1px solid var(--line); background: #0b0b0b; }
+.empty { text-align: center; padding: 36px 16px; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--r); }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--brand); color: #111111; box-shadow: 0 0 0 2px #111111; padding: 10px 16px; border-radius: 8px; font-weight: 600; z-index: 20; max-width: calc(100% - 32px); }
+.pre { white-space: pre-wrap; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 14px; font-size: 14px; max-height: 420px; overflow: auto; }
+.list-plain { list-style: none; margin: 0; padding: 0; }
+.list-plain li { padding: 8px 0; border-bottom: 1px solid var(--line); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <button class="brand" id="brand" type="button" aria-label="Magic Drink, início"><img src="logo-laranja.png" alt="Magic Drink" width="440" height="450"></button>
+    <nav class="nav" id="nav"></nav>
+  </div>
+</header>
+<main class="wrap" id="app"></main>
+<div id="lb"></div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="engine.js"></script>
+<script src="backend.js"></script>
+<script>
+const E = ENGINE;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const clone = o => JSON.parse(JSON.stringify(o));
+
+// ---------- catálogo ----------
+const BASES = {
+  standard: { nome: 'Standard', modo: '1v1', estrutura: 'swiss', bestOf: 3, mana: ['w', 'u'], deck: 'Mínimo 60 cartas, sideboard de até 15. Apenas coleções legais no Standard.' },
+  pioneer: { nome: 'Pioneer', modo: '1v1', estrutura: 'swiss', bestOf: 3, mana: ['r', 'g'], deck: 'Mínimo 60 cartas, sideboard de até 15. Coleções a partir de Return to Ravnica.' },
+  modern: { nome: 'Modern', modo: '1v1', estrutura: 'swiss', bestOf: 3, mana: ['u', 'r'], deck: 'Mínimo 60 cartas, sideboard de até 15. Coleções a partir da Oitava Edição.' },
+  legacy: { nome: 'Legacy', modo: '1v1', estrutura: 'swiss', bestOf: 3, mana: ['u', 'b'], deck: 'Mínimo 60 cartas, sideboard de até 15. Todas as coleções, com lista de banidas.' },
+  vintage: { nome: 'Vintage', modo: '1v1', estrutura: 'swiss', bestOf: 3, mana: ['u', 'b'], deck: 'Mínimo 60 cartas, sideboard de até 15. Lista de restritas em vigor.' },
+  pauper: { nome: 'Pauper', modo: '1v1', estrutura: 'swiss', bestOf: 3, mana: ['w', 'b'], deck: 'Mínimo 60 cartas, apenas cartas impressas como comuns.' },
+  premodern: { nome: 'Premodern', modo: '1v1', estrutura: 'swiss', bestOf: 3, mana: ['w', 'g'], deck: 'Mínimo 60 cartas, coleções de Quarta Edição a Scourge.' },
+  commander: { nome: 'Commander', modo: 'multi', estrutura: 'pods', bestOf: 1, podSize: 4, mana: ['w', 'u', 'b', 'r', 'g'], deck: '100 cartas singleton incluindo o comandante. 40 de vida. Dano de comandante 21.' },
+  duelcommander: { nome: 'Duel Commander', modo: '1v1', estrutura: 'swiss', bestOf: 3, mana: ['b', 'r'], deck: 'Deck de 100 cartas singleton incluindo o comandante. 20 de vida. Dano de comandante 21.' },
+  cedh: { nome: 'cEDH', modo: 'multi', estrutura: 'pods', bestOf: 1, podSize: 4, mana: ['u', 'b', 'g'], deck: '100 cartas singleton. Commander competitivo, sem regra zero.' },
+  oathbreaker: { nome: 'Oathbreaker', modo: 'multi', estrutura: 'pods', bestOf: 1, podSize: 4, mana: ['r', 'w'], deck: '60 cartas singleton com planeswalker e mágica de assinatura. 20 de vida.' },
+  draft: { nome: 'Booster Draft', modo: '1v1', estrutura: 'draft', bestOf: 3, podSize: 8, mana: ['g', 'u'], deck: 'Mínimo 40 cartas com terrenos básicos à vontade. 3 boosters por jogador.' },
+  sealed: { nome: 'Selado', modo: '1v1', estrutura: 'swiss', bestOf: 3, mana: ['b', 'r'], deck: 'Mínimo 40 cartas a partir de 6 boosters.' },
+  custom: { nome: 'Personalizado', modo: '1v1', estrutura: 'swiss', bestOf: 3, mana: ['w', 'u', 'b', 'r', 'g'], deck: '' },
+};
+const ESTRUTURAS = {
+  swiss: { nome: 'Suíço', desc: 'Todos jogam todas as rodadas. Pareamento por pontuação, sem repetir oponente.' },
+  single: { nome: 'Eliminatória simples', desc: 'Perdeu, saiu. Chave com byes para os cabeças de chave.' },
+  double: { nome: 'Eliminatória dupla', desc: 'Chave de vencedores e de perdedores. Eliminado na segunda derrota.' },
+  roundrobin: { nome: 'Todos contra todos', desc: 'Cada jogador enfrenta todos os outros uma vez.' },
+  pods: { nome: 'Pods multijogador', desc: 'Mesas de 3 a 5 jogadores, rodadas por pontuação, mesa final opcional.' },
+  draft: { nome: 'Pods de draft + suíço', desc: 'Divide em mesas de draft e pareia em suíço dentro de cada mesa.' },
+};
+const STATUS = {
+  rascunho: { nome: 'Rascunho', cls: 'draft' }, inscricoes: { nome: 'Inscrições abertas', cls: 'open' },
+  fechado: { nome: 'Inscrições encerradas', cls: '' }, andamento: { nome: 'Em andamento', cls: 'live' }, encerrado: { nome: 'Encerrado', cls: '' },
+};
+const MANA = { w: 'var(--mana-w)', u: 'var(--mana-u)', b: 'var(--mana-b)', r: 'var(--mana-r)', g: 'var(--mana-g)' };
+const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+
+// ---------- estado ----------
+const S = {
+  mode: 'loading', db: null, user: null, uid: null, admin: false, canWrite: false,
+  events: {}, formats: {}, regs: {}, myReg: null,
+  view: 'home', eventId: null, tab: 'info', formatId: null, newEvent: false,
+  armed: null, pendingRender: false, assets: null, media: [], mediaSub: null, lightbox: null, uploading: '',
+};
+
+// ---------- armazenamento (db compartilhado, ou local quando indisponível) ----------
+const LOCAL_KEY = 'magic-drink-local-v1';
+const local = (() => {
+  let data = { events: {}, formats: {}, regs: {} };
+  try { const raw = localStorage.getItem(LOCAL_KEY); if (raw) data = Object.assign(data, JSON.parse(raw)); } catch (e) {}
+  const subs = { events: [], formats: [], regs: [] };
+  const persist = () => { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(data)); } catch (e) {} };
+  const emit = c => subs[c].forEach(f => f(clone(data[c])));
+  return {
+    watch(c, f) { subs[c].push(f); f(clone(data[c])); },
+    async save(c, id, v) { data[c][id] = clone(v); persist(); emit(c); },
+    async remove(c, id) { delete data[c][id]; persist(); emit(c); },
+  };
+})();
+const chains = {};
+const store = {
+  watch(c, f) {
+    if (S.mode !== 'db') return local.watch(c, f);
+    S.db.collection(c).onSnapshot(snap => {
+      const out = {}; snap.docs.forEach(d => out[d.id] = clone(d.data())); f(out);
+    }, err => toast('Conexão com os dados perdida. Recarregue a página.'));
+  },
+  save(c, id, v) {
+    if (S.mode !== 'db') return local.save(c, id, v);
+    const key = c + '/' + id;
+    const p = (chains[key] || Promise.resolve()).then(() => S.db.doc(key).set(v));
+    chains[key] = p.catch(() => {});
+    return p.catch(e => { toast(e && e.code === 'quota_exceeded' ? 'Limite de armazenamento atingido. Apague eventos antigos.' : 'Não foi possível salvar. Você tem permissão de edição?'); throw e; });
+  },
+  remove(c, id) {
+    if (S.mode !== 'db') return local.remove(c, id);
+    return S.db.doc(c + '/' + id).delete().catch(e => { toast('Não foi possível apagar.'); throw e; });
+  },
+};
+
+// ---------- utilidades ----------
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3200); }
+function fmtDate(d, h) {
+  if (!d) return 'Data a definir';
+  const [y, m, dd] = d.split('-').map(Number); const dt = new Date(y, m - 1, dd);
+  return `${DIAS[dt.getDay()]}, ${dd} de ${MESES[m - 1]} de ${y}${h ? ' às ' + h : ''}`;
+}
+function dateBox(d) {
+  if (!d) return '<div class="datebox"><b>?</b><span>data</span></div>';
+  const [, m, dd] = d.split('-').map(Number);
+  return `<div class="datebox"><b>${dd}</b><span>${MESES[m - 1]}</span></div>`;
+}
+const manaPips = arr => `<span class="mana" aria-hidden="true">${(arr || []).map(c => `<i style="background:${MANA[c]}"></i>`).join('')}</span>`;
+const statusChip = s => { const x = STATUS[s] || STATUS.rascunho; return `<span class="chip ${x.cls}">${x.nome}</span>`; };
+const lines = t => String(t || '').split('\n').map(s => s.trim()).filter(Boolean);
+const pname = (ev, id) => { const p = ev.players.find(x => x.id === id); return p ? p.nome : '—'; };
+const pct = x => (x * 100).toFixed(1).replace('.', ',') + '%';
+const money = v => v ? 'R$ ' + Number(v).toFixed(2).replace('.', ',') : 'Gratuito';
+const sortedEvents = () => Object.values(S.events).sort((a, b) => (a.data || '9').localeCompare(b.data || '9') || (a.hora || '').localeCompare(b.hora || ''));
+const publicEvents = () => sortedEvents().filter(e => e.status !== 'rascunho');
+const ev = () => S.events[S.eventId];
+const isElim = e => e.estrutura === 'single' || e.estrutura === 'double';
+function myPlayer(e) { return S.uid ? e.players.find(p => p.regUid === S.uid) : null; }
+function pendingFor(e) {
+  return Object.entries(S.regs).filter(([uid, r]) => r.eventos && r.eventos[e.id] && !e.players.some(p => p.regUid === uid))
+    .map(([uid, r]) => ({ uid, nome: r.nome, contato: r.contato, deck: r.eventos[e.id].deck, em: r.eventos[e.id].em }));
+}
+
+async function saveEvent(e) { S.events[e.id] = e; render(); await store.save('events', e.id, e); }
+async function mutate(fn) {
+  const e = clone(ev()); try { const r = fn(e); if (r === false) return; } catch (err) { toast(err.message); return; }
+  await saveEvent(e);
+}
+
+// botões de duas etapas (confirm() não existe no visualizador)
+function armed(key) { if (S.armed === key) { S.armed = null; return true; } S.armed = key; render(); setTimeout(() => { if (S.armed === key) { S.armed = null; render(); } }, 4000); return false; }
+const armBtn = (key, label, confirmLabel, extra = '') => `<button class="btn sm danger ${S.armed === key ? 'armed' : ''}" data-act="${key}" ${extra}>${S.armed === key ? confirmLabel : label}</button>`;
+
+// ---------- render ----------
+function render() {
+  const a = document.activeElement;
+  if (a && a.closest && a.closest('#app') && a.matches('input[type=text],input[type=number],input[type=date],input[type=time],textarea')) { S.pendingRender = true; return; }
+  S.pendingRender = false;
+  renderNav();
+  const app = $('#app');
+  let html = '';
+  if (S.mode === 'loading') html = '<div class="empty">Carregando…</div>';
+  else {
+    if (S.mode === 'local') html += `<div class="banner">Modo local: os dados ficam só neste navegador. ${window.MD_CONFIG ? 'Configure o Supabase no arquivo config.js para salvar e compartilhar com a comunidade.' : 'Abra o app pelo link do claude.ai para salvar e compartilhar com a comunidade.'}</div>`;
+    if (S.view === 'event' && ev()) html += viewEvent();
+    else if (S.view === 'admin' && S.admin) html += viewAdmin();
+    else if (S.view === 'formats' && S.admin) html += viewFormats();
+    else if (S.view === 'login' && window.MD_AUTH) html += viewLogin();
+    else html += viewHome();
+  }
+  app.innerHTML = html;
+  const lbKey = S.lightbox ? S.lightbox + '|' + S.armed + '|' + S.media.length + '|' + S.admin : '';
+  if (lbKey !== S.lbKey) { S.lbKey = lbKey; $('#lb').innerHTML = S.lightbox ? lightboxHtml() : ''; }
+  tickClock();
+  if (S.view === 'event' && S.tab === 'divulgar') paintFlyer();
+}
+document.addEventListener('focusout', () => setTimeout(() => { if (S.pendingRender) render(); }, 0));
+
+function renderNav() {
+  const items = [['home', 'Eventos']];
+  if (S.admin) items.push(['admin', 'Organizar'], ['formats', 'Formatos e regras']);
+  $('#nav').innerHTML = items.map(([v, l]) => `<button data-nav="${v}" aria-current="${S.view === v || (v === 'home' && S.view === 'event' && !S.admin)}">${l}</button>`).join('')
+    + (window.MD_AUTH && S.mode === 'db' ? (S.admin ? '<button data-act="logout">Sair</button>' : `<button data-nav="login" aria-current="${S.view === 'login'}">Organizador</button>`) : '');
+}
+function viewLogin() {
+  return `<div class="panel stack" style="max-width:420px;width:100%;justify-self:center"><h3 style="margin:0" class="display">Área do organizador</h3>
+    <form class="form" id="login-form" style="grid-template-columns:1fr">
+      <label class="f">E-mail<input type="text" id="lg-email" autocomplete="username" inputmode="email" required></label>
+      <label class="f">Senha<input type="password" id="lg-senha" autocomplete="current-password" required style="width:100%;background:var(--field-bg);border:1px solid var(--field-line);border-radius:8px;padding:8px 10px;color:var(--field-ink)"></label>
+      <div><button class="btn primary" type="submit">Entrar</button></div>
+    </form>
+    <p class="small muted" style="margin:0">Jogadores não precisam entrar. A inscrição é feita direto na página do evento.</p></div>`;
+}
+
+// ---------- página pública ----------
+function viewHome() {
+  const evs = publicEvents();
+  const upcoming = evs.filter(e => e.status !== 'encerrado');
+  const past = evs.filter(e => e.status === 'encerrado').reverse();
+  const next = upcoming[0];
+  let h = `<section class="hero">
+    <div class="stack">
+      <div class="eyebrow">Comunidade de Magic: The Gathering</div>
+      <h1>Torneios, cartas e drinks</h1>
+      <p>Encontros da comunidade do estado para jogar vários formatos de Magic com regras próprias. Veja os próximos eventos, as regras de cada formato, os pareamentos ao vivo e a classificação.</p>
+      ${S.admin ? `<div class="row"><button class="btn primary" data-act="new-event">Criar evento</button><button class="btn" data-nav="formats">Formatos e regras</button></div>` : ''}
+    </div>
+    <div class="next">${next ? `
+      <div class="eyebrow">Próximo evento</div>
+      <div class="display" style="font-size:22px;font-weight:800">${esc(next.nome)}</div>
+      <div class="muted small">${esc(fmtDate(next.data, next.hora))}</div>
+      <div class="small">${esc(next.local || '')}${next.cidade ? ' · ' + esc(next.cidade) : ''}</div>
+      <div class="row">${statusChip(next.status)}<span class="chip">${esc(next.formatoNome || '')}</span></div>
+      <div><button class="btn primary sm" data-open="${next.id}">Ver evento</button></div>` : `<div class="eyebrow">Próximo evento</div><div class="muted">Nenhum evento publicado ainda.</div>`}
+    </div></section>`;
+  h += `<section class="stack"><div class="spread"><h2 class="display" style="font-size:22px">Próximos eventos</h2></div>`;
+  h += upcoming.length ? `<div class="grid3">${upcoming.map(evCard).join('')}</div>`
+    : `<div class="empty">${S.admin ? 'Nenhum evento publicado. Crie um evento em Organizar e mude o status para "Inscrições abertas" para ele aparecer aqui.' : 'Nenhum evento aberto no momento. Volte em breve.'}</div>`;
+  h += `</section>`;
+  if (past.length) h += `<section class="stack"><h2 class="display" style="font-size:22px">Eventos anteriores</h2><div class="grid3">${past.map(evCard).join('')}</div></section>`;
+  return h;
+}
+function evCard(e) {
+  const n = e.players.length, max = +e.vagas || 0;
+  return `<button class="evcard" data-open="${e.id}">
+    <div class="row" style="align-items:flex-start;flex-wrap:nowrap">${dateBox(e.data)}
+      <div class="stack" style="gap:4px;min-width:0"><h3>${esc(e.nome)}</h3><div class="muted small">${esc(e.hora || '')}${e.local ? ' · ' + esc(e.local) : ''}</div></div></div>
+    <div class="row">${statusChip(e.status)}<span class="chip">${manaPips(e.mana)} ${esc(e.formatoNome || '')}</span><span class="chip">${esc((ESTRUTURAS[e.estrutura] || {}).nome || '')}</span></div>
+    ${max ? `<div class="stack" style="gap:4px"><div class="bar"><i style="width:${Math.min(100, n / max * 100)}%"></i></div><div class="small muted num">${n} de ${max} vagas preenchidas</div></div>` : `<div class="small muted num">${n} inscritos</div>`}
+  </button>`;
+}
+
+// ---------- página do evento ----------
+function eventTabs(e) {
+  const t = [['info', 'Visão geral'], ['jogadores', `Jogadores (${e.players.length})`], ['rodadas', 'Rodadas']];
+  if (!isElim(e)) t.push(['classificacao', 'Classificação']);
+  if (isElim(e) || (e.cutSeeds && !E.isMulti(e))) t.push(['chave', 'Chave']);
+  const nm = S.mediaSub && S.mediaSub.eid === e.id ? S.media.length : 0;
+  t.push(['midia', `Fotos e vídeos${nm ? ` (${nm})` : ''}`]);
+  if (S.admin) t.push(['divulgar', 'Divulgar'], ['config', 'Configurar']);
+  return t;
+}
+function viewEvent() {
+  const e = ev();
+  const tabs = eventTabs(e);
+  if (!tabs.some(t => t[0] === S.tab)) S.tab = 'info';
+  let h = `<div class="evhead">
+    <div class="row"><button class="btn sm" data-nav="${S.admin ? 'admin' : 'home'}">← Voltar</button>${S.admin && S.tab !== 'config' ? '<button class="btn sm primary" data-tab="config">Editar evento</button>' : ''}</div>
+    <div class="row">${statusChip(e.status)}<span class="chip">${manaPips(e.mana)} ${esc(e.formatoNome)}</span><span class="chip">${esc(ESTRUTURAS[e.estrutura].nome)}</span>${e.bestOf > 1 && !E.isMulti(e) ? `<span class="chip">Melhor de ${e.bestOf}</span>` : ''}</div>
+    <h1>${esc(e.nome)}</h1>
+    <div class="muted">${esc(fmtDate(e.data, e.hora))}${e.local ? ' · ' + esc(e.local) : ''}${e.cidade ? ', ' + esc(e.cidade) : ''}</div>
+  </div>
+  <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" aria-selected="${S.tab === k}" data-tab="${k}">${l}</button>`).join('')}</div>`;
+  const champ = champion(e);
+  if (champ) h += `<div class="champ"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v3a7 7 0 0 1-14 0Z M9 20h6 M12 14v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Campeão</span><b>${esc(pname(e, champ))}</b></div>`;
+  h += ({ info: tabInfo, jogadores: tabPlayers, rodadas: tabRounds, classificacao: tabStandings, chave: tabBracket, divulgar: tabPromo, config: tabConfig, midia: tabMedia }[S.tab])(e);
+  return h;
+}
+function champion(e) {
+  if (e.estrutura === 'single') return E.elimChampion(e, 'main');
+  if (e.estrutura === 'double') { if (!e.rounds.length) return null; const s = E.doubleState(e); const last = e.rounds[e.rounds.length - 1]; return s.alive.length === 1 && E.roundDone(last) ? s.alive[0] : null; }
+  if (e.cutSeeds) {
+    if (E.isMulti(e)) { const f = e.rounds.find(r => r.stage === 'final'); return f && f.matches[0].result && f.matches[0].result.winner || null; }
+    return E.elimChampion(e, 'elim');
+  }
+  return null;
+}
+
+function tabInfo(e) {
+  const n = e.players.length, max = +e.vagas || 0, me = myPlayer(e);
+  const myPending = S.myReg && S.myReg.eventos && S.myReg.eventos[e.id] && !me;
+  let signup = '';
+  if (e.status === 'inscricoes') {
+    if (me) signup = `<div class="chip open">Você está inscrito como ${esc(me.nome)}</div>`;
+    else if (myPending) signup = `<div class="stack"><div class="chip gold">Inscrição enviada. Aguardando confirmação da organização.</div><div>${armBtn('cancel-reg', 'Cancelar minha inscrição', 'Confirmar cancelamento')}</div></div>`;
+    else if (S.canWrite && S.uid) signup = `<form class="form" id="signup">
+        <label class="f">Seu nome ou apelido<input type="text" id="su-nome" required maxlength="60" value="${esc(S.myReg && S.myReg.nome || '')}"></label>
+        <label class="f">WhatsApp ou Instagram<input type="text" id="su-contato" maxlength="80" value="${esc(S.myReg && S.myReg.contato || '')}"></label>
+        <label class="f wide">${E.isMulti(e) ? 'Comandante / deck' : 'Deck que vai jogar'} (opcional)<input type="text" id="su-deck" maxlength="80"></label>
+        <div class="wide"><button class="btn primary" type="submit">Quero participar</button> <span class="small muted">Só a organização vê seu contato.</span></div>
+      </form>`;
+    else signup = `<p class="muted small" style="margin:0">Para se inscrever, fale com a organização${e.contato ? ': <b class="mono">' + esc(e.contato) + '</b>' : ''}.</p>`;
+  }
+  const regras = lines(e.regras), ban = lines(e.banlist);
+  return `<div class="grid2">
+    <div class="stack">
+      ${e.descricao ? `<div class="panel"><p style="margin:0;white-space:pre-wrap">${esc(e.descricao)}</p></div>` : ''}
+      <div class="panel rules"><h3>Regras do evento</h3>${regras.length ? `<ol>${regras.map(r => `<li>${esc(r)}</li>`).join('')}</ol>` : '<p class="muted" style="margin:0">Regras ainda não publicadas.</p>'}</div>
+      ${ban.length ? `<div class="panel"><h3>Cartas banidas ou restritas</h3><ul class="list-plain">${ban.map(b => `<li>${esc(b)}</li>`).join('')}</ul></div>` : ''}
+    </div>
+    <div class="stack">
+      <div class="panel stack">
+        <div class="spread"><span class="eyebrow">Inscrições</span>${statusChip(e.status)}</div>
+        ${max ? `<div class="bar"><i style="width:${Math.min(100, n / max * 100)}%"></i></div><div class="num small">${n} de ${max} vagas${n >= max ? ' · lista de espera' : ''}</div>` : `<div class="num small">${n} inscritos</div>`}
+        <table><tbody>
+          <tr><td class="muted">Inscrição</td><td>${esc(money(e.taxa))}</td></tr>
+          <tr><td class="muted">Formato</td><td>${esc(e.formatoNome)}</td></tr>
+          <tr><td class="muted">Estrutura</td><td>${esc(ESTRUTURAS[e.estrutura].nome)}${e.rodadas ? ` · ${e.rodadas} rodadas` : ''}${+e.topCut ? (E.isMulti(e) ? ' + mesa final' : ` + top ${e.topCut}`) : ''}</td></tr>
+          <tr><td class="muted">Tempo de rodada</td><td>${e.minutos ? e.minutos + ' min' : '—'}</td></tr>
+          <tr><td class="muted">Pontuação</td><td class="num">Vitória ${e.pontos.v} · Empate ${e.pontos.e} · Derrota ${e.pontos.d}</td></tr>
+          ${e.premiacao ? `<tr><td class="muted">Premiação</td><td style="white-space:pre-wrap">${esc(e.premiacao)}</td></tr>` : ''}
+        </tbody></table>
+        ${signup}
+      </div>
+      ${me && e.rounds.length ? myTableCard(e, me) : ''}
+    </div>
+  </div>`;
+}
+function myTableCard(e, me) {
+  const r = e.rounds[e.rounds.length - 1];
+  const m = r.matches.find(x => x.players.includes(me.id));
+  if (!m) return '';
+  const others = m.players.filter(x => x !== me.id).map(id => esc(pname(e, id)));
+  return `<div class="panel" style="border-color:var(--gold)"><div class="eyebrow">Sua mesa · rodada ${r.n}</div>
+    <div class="display" style="font-size:22px">${m.bye ? 'Bye' : m.wait ? 'Aguardando' : 'Mesa ' + m.mesa}</div>
+    <div class="muted">${m.bye ? 'Vitória automática nesta rodada.' : m.wait ? 'Você avança sem jogar nesta rodada.' : 'Contra ' + others.join(', ')}</div></div>`;
+}
+
+function tabPlayers(e) {
+  const pend = S.admin ? pendingFor(e) : [];
+  const started = e.rounds.length > 0;
+  let h = '';
+  if (S.admin) {
+    h += `<div class="grid2">
+      <div class="panel stack"><h3 style="margin:0">Adicionar jogadores</h3>
+        <label class="f">Um por linha. Use "Nome ; deck" para registrar o deck.<textarea id="add-players" placeholder="Ana ; Mono Red&#10;Bruno ; Atraxa"></textarea></label>
+        <div><button class="btn primary" data-act="add-players">Adicionar</button></div>
+        ${started ? '<p class="small muted" style="margin:0">Jogadores adicionados depois do início entram a partir da próxima rodada.</p>' : ''}
+      </div>
+      <div class="panel stack"><h3 style="margin:0">Inscrições pela página (${pend.length})</h3>
+        ${pend.length ? `<ul class="list-plain">${pend.map(p => `<li class="spread"><div style="min-width:0"><b>${esc(p.nome)}</b> <span class="muted small">${esc(p.deck || '')}</span><div class="small mono muted">${esc(p.contato || '')}</div></div>
+          <div class="row"><button class="btn sm primary" data-approve="${p.uid}">Aprovar</button>${armBtn('reject:' + p.uid, 'Recusar', 'Confirmar')}</div></li>`).join('')}</ul>`
+        : '<p class="muted small" style="margin:0">Nenhuma inscrição pendente. Quem tiver acesso de colaborador ao app pode se inscrever pela página do evento.</p>'}
+      </div></div>`;
+  }
+  if (!e.players.length) return h + `<div class="empty">Nenhum jogador inscrito ainda.</div>`;
+  const showDeck = S.admin || e.mostrarDecks;
+  const draft = e.estrutura === 'draft' && e.players.some(p => p.pod);
+  const paid = e.players.filter(p => p.pago).length;
+  h += `<div class="panel" style="padding:0"><div class="spread" style="padding:14px 16px"><h3 style="margin:0">Lista de jogadores</h3>${S.admin && +e.taxa ? `<span class="chip gold num">${paid} de ${e.players.length} pagos</span>` : ''}</div><div class="tbl-wrap"><table>
+    <thead><tr><th>#</th><th>Jogador</th>${showDeck ? '<th>Deck</th>' : ''}${draft ? '<th>Mesa de draft</th>' : ''}${S.admin ? '<th>Pago</th><th>Situação</th><th></th>' : ''}</tr></thead><tbody>
+    ${e.players.map((p, i) => `<tr class="${myPlayer(e) && myPlayer(e).id === p.id ? 'me' : ''}"><td class="num muted">${i + 1}</td><td>${S.admin ? `<input type="text" id="pn-${p.id}" data-pname="${p.id}" value="${esc(p.nome)}" maxlength="60" aria-label="Nome" style="min-width:140px">` : `<b>${esc(p.nome)}</b>`}${p.dropped ? ' <span class="chip">desistiu</span>' : ''}</td>
+      ${showDeck ? (S.admin ? `<td><input type="text" id="pd-${p.id}" data-pdeck="${p.id}" value="${esc(p.deck || '')}" maxlength="80" aria-label="Deck" style="min-width:140px"></td>` : `<td class="muted">${esc(p.deck || '')}</td>`) : ''}${draft ? `<td class="num">${p.pod ? `Mesa ${p.pod} · assento ${p.assento}` : '—'}</td>` : ''}
+      ${S.admin ? `<td><label class="check"><input type="checkbox" data-paid="${p.id}" ${p.pago ? 'checked' : ''}> <span class="sr">${p.pago ? 'Sim' : 'Não'}</span></label></td>
+      <td><button class="btn sm" data-drop="${p.id}">${p.dropped ? 'Reativar' : 'Desistência'}</button></td>
+      <td>${e.rounds.some(r => r.matches.some(m => m.players.includes(p.id))) ? '' : armBtn('rm:' + p.id, 'Remover', 'Confirmar')}</td>` : ''}</tr>`).join('')}
+    </tbody></table></div></div>`;
+  return h;
+}
+
+function resultLabel(e, m) {
+  if (m.bye) return '<span class="chip gold">Bye</span>';
+  if (m.wait) return '<span class="chip">Aguarda</span>';
+  if (!m.result) return '<span class="chip draft">Em jogo</span>';
+  if (m.result.winner) return `<span class="chip open">Venceu: ${esc(pname(e, m.result.winner))}</span>`;
+  if (m.result.draw) return '<span class="chip">Empate</span>';
+  return `<span class="chip ${m.result.a === m.result.b ? '' : 'open'} num">${m.result.a}-${m.result.b}${m.result.d ? '-' + m.result.d : ''}</span>`;
+}
+function resultInput(e, r, m) {
+  if (m.bye || m.wait) return resultLabel(e, m);
+  const elim = r.stage === 'elim' || isElim(e);
+  const val = m.result ? (m.result.winner ? 'w:' + m.result.winner : m.result.draw ? 'draw' : `${m.result.a}-${m.result.b}-${m.result.d || 0}`) : '';
+  let opts;
+  if (m.players.length > 2) opts = m.players.map(id => [`w:${id}`, `Vitória de ${pname(e, id)}`]).concat(elim ? [] : [['draw', 'Empate (todos)']]);
+  else {
+    const [a, b] = m.players.map(id => pname(e, id));
+    const bo = +e.bestOf || 3;
+    const list = bo >= 3 ? [['2-0-0', `${a} 2-0`], ['2-1-0', `${a} 2-1`], ['1-0-0', `${a} 1-0`], ['1-0-1', `${a} 1-0-1`], ['0-2-0', `${b} 2-0`], ['1-2-0', `${b} 2-1`], ['0-1-0', `${b} 1-0`], ['0-1-1', `${b} 1-0-1`], ['1-1-0', 'Empate 1-1'], ['1-1-1', 'Empate 1-1-1'], ['0-0-0', 'Empate 0-0 (ID)']]
+      : [['1-0-0', `Vitória de ${a}`], ['0-1-0', `Vitória de ${b}`], ['0-0-1', 'Empate']];
+    opts = elim ? list.filter(([v]) => { const [x, y] = v.split('-').map(Number); return x !== y; }) : list;
+  }
+  return `<select data-result="${r.n}:${m.id}" aria-label="Resultado da mesa ${m.mesa}"><option value="">Resultado…</option>${opts.map(([v, l]) => `<option value="${esc(v)}" ${v === val ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+}
+function swapSel(e, r, m, i) {
+  const cur = m.players[i];
+  return `<select data-swap="${r.n}:${m.id}:${i}" aria-label="Trocar jogador" style="width:auto;max-width:100%">${e.players.filter(p => !p.dropped || p.id === cur).map(p => `<option value="${p.id}" ${p.id === cur ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select>`;
+}
+function matchRow(e, r, m) {
+  const me = myPlayer(e); const w = E.winnerOf(m);
+  const mine = me && m.players.includes(me.id);
+  let who;
+  const editable = S.admin && S.editPairs && r === e.rounds[e.rounds.length - 1];
+  if (editable) who = `<div class="pod">${m.players.map((id, i) => swapSel(e, r, m, i)).join('<span class="x muted small" style="align-self:center">vs</span>')}</div>`;
+  else if (m.players.length > 2) who = `<div class="pod">${m.players.map((id, i) => `<span class="${w === id ? 'pl win' : ''}"><small>${i + 1}º</small>${esc(pname(e, id))}</span>`).join('')}</div>`;
+  else if (m.players.length === 1) who = `<div class="vs"><span class="pl">${esc(pname(e, m.players[0]))}</span></div>`;
+  else who = `<div class="vs"><span class="pl ${w === m.players[0] ? 'win' : ''}">${esc(pname(e, m.players[0]))}</span><span class="x">vs</span><span class="pl ${w === m.players[1] ? 'win' : ''}">${esc(pname(e, m.players[1]))}</span></div>`;
+  const tag = m.bracket ? ({ W: 'Vencedores', L: 'Perdedores', F: 'Grande final' }[m.bracket]) : m.pod ? `Draft ${m.pod}` : '';
+  return `<div class="match ${mine ? 'me' : ''}"><div class="mesa">${m.bye || m.wait ? '—' : `Mesa<b>${m.mesa}</b>`}</div>
+    <div style="min-width:0">${tag ? `<div class="small muted">${tag}</div>` : ''}${who}</div>
+    <div>${S.admin ? resultInput(e, r, m) : resultLabel(e, m)}</div></div>`;
+}
+function roundTitle(e, r) {
+  if (r.stage === 'final') return 'Mesa final';
+  if (r.stage === 'elim') { const rs = E.stageRounds(e, 'elim'); return E.elimLabel(E.elimTotalRounds(e.cutSeeds.length), rs.indexOf(r)); }
+  if (e.estrutura === 'single') { const rs = E.stageRounds(e, 'main'); return E.elimLabel(E.elimTotalRounds((e.seeds || []).length), rs.indexOf(r)); }
+  return 'Rodada ' + r.n;
+}
+function tabRounds(e) {
+  const last = e.rounds[e.rounds.length - 1];
+  let h = '';
+  if (S.admin) {
+    const mainCount = E.stageRounds(e, 'main').length;
+    const planned = +e.rodadas || 0;
+    const canCut = +e.topCut && !e.cutSeeds && !isElim(e) && mainCount >= planned && planned > 0;
+    const finished = !!champion(e) || (e.rounds.length && !e.cutSeeds && !isElim(e) && planned && mainCount >= planned && !+e.topCut && E.roundDone(last));
+    h += `<div class="panel spread"><div class="stack" style="gap:2px"><b>${e.rounds.length ? `${roundTitle(e, last)} ${E.roundDone(last) ? 'concluída' : 'em andamento'}` : 'Pronto para começar'}</b>
+      <span class="small muted">${planned && !isElim(e) ? `Fase classificatória: ${mainCount} de ${planned} rodadas` : ESTRUTURAS[e.estrutura].desc}</span></div>
+      <div class="row">
+        ${e.estrutura === 'draft' && !e.rounds.length ? `<button class="btn" data-act="draft-pods">${e.players.some(p => p.pod) ? 'Sortear mesas de draft de novo' : 'Sortear mesas de draft'}</button>` : ''}
+        ${canCut ? `<button class="btn primary" data-act="cut">${E.isMulti(e) ? 'Gerar mesa final' : `Iniciar top ${e.topCut}`}</button>` : ''}
+        ${!finished && !canCut ? `<button class="btn primary" data-act="next-round" ${e.estrutura === 'draft' && !e.players.some(p => p.pod) ? 'disabled' : ''}>${e.rounds.length ? 'Gerar próxima rodada' : 'Gerar 1ª rodada'}</button>` : ''}
+        ${e.rounds.length ? `<button class="btn" data-act="edit-pairs">${S.editPairs ? 'Concluir edição das mesas' : 'Editar mesas'}</button>` : ''}
+        ${e.rounds.length ? armBtn('undo-round', 'Desfazer última rodada', 'Confirmar desfazer') : ''}
+      </div></div>`;
+  }
+  if (!e.rounds.length) return h + `<div class="empty">${e.players.length < 2 ? 'Adicione pelo menos 2 jogadores para gerar a primeira rodada.' : 'As rodadas aparecem aqui assim que a organização gerar os pareamentos.'}</div>`;
+  e.rounds.slice().reverse().forEach((r, idx) => {
+    const pend = r.matches.filter(m => !E.done(m)).length;
+    const clock = r.inicio && e.minutos ? `<div class="stack" style="gap:0;text-align:right"><span class="eyebrow">Tempo restante</span><span class="clock" data-clock="${r.inicio + e.minutos * 60000}">--:--</span></div>` : '';
+    h += `<section class="panel" style="padding:0">
+      <div class="spread" style="padding:14px 16px;border-bottom:1px solid var(--line)">
+        <div class="stack" style="gap:2px"><h3 style="margin:0" class="display">${roundTitle(e, r)}</h3><span class="small muted">${pend ? `${pend} ${pend === 1 ? 'mesa' : 'mesas'} sem resultado` : 'Todos os resultados lançados'}</span></div>
+        <div class="row">${idx === 0 ? clock : ''}${S.admin && idx === 0 && e.minutos ? `<button class="btn sm" data-act="clock">${r.inicio ? 'Reiniciar relógio' : 'Iniciar relógio'}</button>` : ''}</div>
+      </div>
+      ${r.matches.map(m => matchRow(e, r, m)).join('')}</section>`;
+  });
+  return h;
+}
+
+function tabStandings(e) {
+  const stage = 'main';
+  if (!e.rounds.length) return `<div class="empty">A classificação aparece depois da primeira rodada.</div>`;
+  const multi = E.isMulti(e), st = E.standings(e, stage);
+  const me = myPlayer(e);
+  const pods = e.estrutura === 'draft' ? [...new Set(e.players.map(p => p.pod).filter(Boolean))].sort((a, b) => a - b) : [];
+  const table = (rows, title) => `<div class="panel" style="padding:0">${title ? `<div style="padding:14px 16px"><h3 style="margin:0">${title}</h3></div>` : ''}<div class="tbl-wrap"><table>
+    <thead><tr><th>#</th><th>Jogador</th><th class="r">Pontos</th><th class="r">V-D-E</th>${multi ? '<th class="r" title="Média de pontos por partida dos oponentes">Força oponentes</th>' : '<th class="r" title="Percentual de vitórias em partidas dos oponentes">OMW%</th><th class="r" title="Percentual de vitórias em games">GW%</th><th class="r" title="Percentual de vitórias em games dos oponentes">OGW%</th>'}</tr></thead>
+    <tbody>${rows.map((s, i) => `<tr class="${me && me.id === s.p.id ? 'me' : ''}"><td class="num">${i + 1}</td><td><b>${esc(s.p.nome)}</b>${s.p.dropped ? ' <span class="chip">desistiu</span>' : ''}</td><td class="r num"><b>${s.mp}</b></td><td class="r num">${s.w}-${s.l}-${s.d}</td>
+    ${multi ? `<td class="r num">${s.sos.toFixed(2).replace('.', ',')}</td>` : `<td class="r num">${pct(s.omw)}</td><td class="r num">${pct(s.gwp)}</td><td class="r num">${pct(s.ogw)}</td>`}</tr>`).join('')}</tbody></table></div></div>`;
+  let h = table(st, pods.length > 1 ? 'Geral' : '');
+  if (pods.length > 1) pods.forEach(p => h += table(st.filter(s => s.p.pod === p), `Mesa de draft ${p}`));
+  h += `<p class="small muted" style="margin:0">Desempate: ${multi ? 'pontos, força dos oponentes (média de pontos por partida dos adversários) e número de vitórias.' : 'pontos, OMW% (mínimo 33%), GW% e OGW%, como nas regras de torneio da Wizards.'}${+e.topCut && !e.cutSeeds ? ` Os ${E.isMulti(e) ? (+e.podSize || 4) : e.topCut} primeiros vão para ${E.isMulti(e) ? 'a mesa final' : 'o top ' + e.topCut}.` : ''}</p>`;
+  return h;
+}
+
+function tabBracket(e) {
+  const stage = e.cutSeeds && !isElim(e) ? 'elim' : 'main';
+  const rs = E.stageRounds(e, stage);
+  if (e.estrutura === 'double') {
+    if (!rs.length) return `<div class="empty">A chave aparece quando a primeira rodada for gerada.</div>`;
+    const st = E.doubleState(e);
+    const col = (br, title) => {
+      const rounds = rs.map((r, i) => ({ i, ms: r.matches.filter(m => m.bracket === br && !m.wait) })).filter(x => x.ms.length);
+      if (!rounds.length) return '';
+      return `<div class="stack"><h3 class="display" style="font-size:18px">${title}</h3><div class="bracket">${rounds.map(x => `<div class="bcol"><h4>Rodada ${x.i + 1}</h4>${x.ms.map(m => bm(e, m)).join('')}</div>`).join('')}</div></div>`;
+    };
+    return `<div class="panel stack"><div class="row small"><span class="chip open">${st.wb.length} sem derrotas</span><span class="chip gold">${st.lb.length} com uma derrota</span><span class="chip">${e.players.length - st.alive.length} eliminados</span></div>
+      ${col('W', 'Chave dos vencedores')}${col('L', 'Chave dos perdedores')}${col('F', 'Grande final')}</div>`;
+  }
+  const seeds = stage === 'elim' ? e.cutSeeds : e.seeds;
+  if (!seeds) return `<div class="empty">A chave aparece quando a primeira rodada for gerada.</div>`;
+  const total = E.elimTotalRounds(seeds.length);
+  let cols = '';
+  for (let i = 0; i < total; i++) {
+    const r = rs[i];
+    const count = Math.pow(2, total - i - 1);
+    const ms = r ? r.matches.slice().sort((a, b) => a.slot - b.slot).map(m => bm(e, m)) : Array.from({ length: count }, () => `<div class="bm"><div class="tbd">a definir</div><div class="tbd">a definir</div></div>`);
+    cols += `<div class="bcol"><h4>${E.elimLabel(total, i)}</h4>${ms.join('')}</div>`;
+  }
+  return `<div class="panel"><div class="bracket">${cols}</div></div>`;
+}
+function bm(e, m) {
+  const w = E.winnerOf(m);
+  if (m.bye) return `<div class="bm"><div class="w"><span>${esc(pname(e, m.players[0]))}</span><span class="small">bye</span></div><div class="tbd">—</div></div>`;
+  const sc = (i) => m.result && !m.result.winner ? (i ? m.result.b : m.result.a) : '';
+  return `<div class="bm">${m.players.map((id, i) => `<div class="${w === id ? 'w' : ''}"><span>${esc(pname(e, id))}</span><span class="num">${sc(i)}</span></div>`).join('')}</div>`;
+}
+
+// ---------- fotos e vídeos ----------
+function watchMedia(eid) {
+  if (S.mode !== 'db' || (S.mediaSub && S.mediaSub.eid === eid)) return;
+  if (S.mediaSub) S.mediaSub.unsub();
+  S.media = [];
+  const unsub = S.db.collection('events/' + eid + '/media').onSnapshot(snap => {
+    S.media = snap.docs.map(d => Object.assign({ id: d.id }, d.data())).sort((a, b) => b.em - a.em); render();
+  }, () => {});
+  S.mediaSub = { eid, unsub };
+}
+const mediaSrc = m => window.MD_BLOB_URL ? window.MD_BLOB_URL(m.asset) : '/_blob/' + m.asset;
+function horaDe(ts) { const d = new Date(ts); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+function tabMedia(e) {
+  const list = S.mediaSub && S.mediaSub.eid === e.id ? S.media : [];
+  let h = '';
+  if (S.admin) {
+    if (S.assets) h += `<div class="panel stack"><div class="spread"><h3 style="margin:0">Registrar o evento</h3>${S.uploading ? `<span class="chip live">${esc(S.uploading)}</span>` : ''}</div>
+      <div class="uploader">
+        <label class="btn primary" for="up-foto">Tirar foto<input type="file" id="up-foto" accept="image/*" capture="environment" data-upload></label>
+        <label class="btn primary" for="up-video">Gravar vídeo<input type="file" id="up-video" accept="video/*" capture="environment" data-upload></label>
+        <label class="btn" for="up-galeria">Escolher da galeria<input type="file" id="up-galeria" accept="image/*,video/*" multiple data-upload></label>
+      </div>
+      <p class="small muted" style="margin:0">Fotos são reduzidas automaticamente. Vídeos até 20 MB (cerca de 20 a 30 segundos em Full HD). A foto ou vídeo fica marcado com a rodada em andamento.</p></div>`;
+    else h += `<div class="banner">${S.mode === 'local' ? 'O envio de fotos e vídeos funciona com o app conectado ao banco de dados.' : 'O envio de fotos e vídeos não está disponível nesta visualização. Entre com sua conta de organizador.'}</div>`;
+  }
+  if (!list.length) return h + `<div class="empty">${S.admin ? 'Nenhuma foto ou vídeo ainda. Use os botões acima durante o evento.' : 'As fotos e vídeos do evento aparecem aqui.'}</div>`;
+  h += `<div class="gallery">${list.map(m => `<button class="tile" data-lightbox="${m.id}" aria-label="${esc(m.legenda || (m.tipo === 'video' ? 'Vídeo' : 'Foto'))}">
+    ${m.tipo === 'video' ? `<video src="${mediaSrc(m)}#t=0.1" preload="metadata" muted playsinline></video><span class="play"><i><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="#111"/></svg></i></span>` : `<img src="${mediaSrc(m)}" alt="" loading="lazy">`}
+    <span class="badge">${m.rodada ? 'R' + m.rodada + ' · ' : ''}${horaDe(m.em)}</span></button>`).join('')}</div>`;
+  return h;
+}
+function lightboxHtml() {
+  const i = S.media.findIndex(m => m.id === S.lightbox); if (i < 0) return '';
+  const m = S.media[i];
+  return `<div class="lightbox" role="dialog" aria-label="Foto ou vídeo do evento">
+    <div class="spread"><span class="small">${m.rodada ? 'Rodada ' + m.rodada + ' · ' : ''}${horaDe(m.em)} · ${i + 1} de ${S.media.length}</span>
+      <div class="row">${i > 0 ? '<button class="btn sm" data-lbnav="-1">Anterior</button>' : ''}${i < S.media.length - 1 ? '<button class="btn sm" data-lbnav="1">Próxima</button>' : ''}<button class="btn sm" data-lbclose>Fechar</button></div></div>
+    <div class="stage">${m.tipo === 'video' ? `<video src="${mediaSrc(m)}" controls playsinline autoplay></video>` : `<img src="${mediaSrc(m)}" alt="${esc(m.legenda || '')}">`}</div>
+    ${S.admin ? `<div class="row"><input type="text" id="lb-legenda-${m.id}" data-legenda="${m.id}" value="${esc(m.legenda || '')}" placeholder="Escreva uma legenda" maxlength="140" style="flex:1;min-width:0">${armBtn('delmedia:' + m.id, 'Apagar', 'Confirmar exclusão')}</div>`
+      : (m.legenda ? `<div>${esc(m.legenda)}</div>` : '')}
+  </div>`;
+}
+async function toJpeg(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const max = 2048, w = img.naturalWidth, h = img.naturalHeight, k = Math.min(1, max / Math.max(w, h));
+    const c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
+    const g = c.getContext('2d'); g.fillStyle = '#ffffff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+    return await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85));
+  } finally { URL.revokeObjectURL(url); }
+}
+const UPLOAD_ERR = {
+  too_large: 'Arquivo acima de 20 MB. Grave um vídeo mais curto ou em resolução menor.',
+  unsupported_type: 'Formato não aceito. Use foto JPG, PNG ou WEBP e vídeo MP4 ou WEBM.',
+  quota_or_state: 'O espaço de armazenamento do app acabou. Apague mídias antigas.',
+  rate_limited: 'Muitos envios seguidos. Espere um pouco e tente de novo.',
+  upstream_auth: 'Sua sessão expirou. Recarregue a página.',
+};
+async function uploadMedia(files) {
+  const eid = S.eventId, e = ev(); if (!S.assets || !e) return;
+  const rodada = e.rounds.length ? e.rounds[e.rounds.length - 1].n : 0;
+  let ok = 0;
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    S.uploading = files.length > 1 ? `Enviando ${i + 1} de ${files.length}…` : 'Enviando…'; render();
+    try {
+      let blob = f, type = f.type, tipo = 'foto';
+      const name = (f.name || '').toLowerCase();
+      if (type.startsWith('video/') || /\.(mov|mp4|webm|m4v)$/.test(name)) {
+        tipo = 'video';
+        type = type === 'video/webm' || name.endsWith('.webm') ? 'video/webm' : 'video/mp4';
+      } else if (type !== 'image/gif') {
+        try { blob = await toJpeg(f); type = 'image/jpeg'; } catch (err) { if (!/^image\/(jpeg|png|webp)$/.test(type)) throw { code: 'unsupported_type' }; }
+      }
+      if (blob.size > 20 * 1024 * 1024) throw { code: 'too_large' };
+      const r = await S.assets.upload(blob, { type });
+      await S.db.collection('events/' + eid + '/media').doc(r.id).set({ asset: r.id, tipo, legenda: '', em: Date.now(), rodada });
+      ok++;
+    } catch (err) { toast(UPLOAD_ERR[err && err.code] || 'Não foi possível enviar o arquivo. Tente de novo.'); }
+  }
+  S.uploading = ''; render();
+  if (ok) toast(ok === 1 ? 'Mídia adicionada ao evento' : `${ok} mídias adicionadas ao evento`);
+}
+
+// ---------- divulgação ----------
+function promoText(e) {
+  const regras = lines(e.regras);
+  const n = e.players.length, max = +e.vagas || 0;
+  return [
+    `MAGIC DRINK · ${e.nome.toUpperCase()}`,
+    '',
+    `Data: ${fmtDate(e.data, e.hora)}`,
+    e.local ? `Local: ${e.local}${e.cidade ? ', ' + e.cidade : ''}` : '',
+    `Formato: ${e.formatoNome} (${ESTRUTURAS[e.estrutura].nome}${e.rodadas ? `, ${e.rodadas} rodadas` : ''}${+e.topCut ? (E.isMulti(e) ? ' + mesa final' : ` + top ${e.topCut}`) : ''})`,
+    `Inscrição: ${money(e.taxa)}`,
+    max ? `Vagas: ${max}${n ? ` (restam ${Math.max(0, max - n)})` : ''}` : '',
+    e.premiacao ? `\nPremiação:\n${e.premiacao}` : '',
+    e.descricao ? `\n${e.descricao}` : '',
+    regras.length ? `\nRegras principais:\n${regras.slice(0, 6).map(r => '• ' + r).join('\n')}${regras.length > 6 ? '\n• e mais no link do evento' : ''}` : '',
+    '',
+    e.contato ? `Inscrições: ${e.contato}` : 'Inscrições abertas. Chame a organização.',
+  ].filter(x => x !== '').join('\n').replace(/\n{3,}/g, '\n\n');
+}
+function resultText(e) {
+  const champ = champion(e);
+  const st = isElim(e) ? [] : E.standings(e, 'main').slice(0, 8);
+  return [`MAGIC DRINK · ${e.nome.toUpperCase()} · RESULTADOS`, '', champ ? `Campeão: ${pname(e, champ)}` : '',
+    st.length ? 'Classificação:\n' + st.map((s, i) => `${i + 1}. ${s.p.nome} (${s.mp} pts${s.p.deck ? ', ' + s.p.deck : ''})`).join('\n') : '',
+    '', `Obrigado a todos os ${e.players.length} jogadores!`].filter(Boolean).join('\n');
+}
+// ---------- flyer ----------
+const FLYER = { post: { w: 1080, h: 1350, nome: 'Post (4:5)' }, status: { w: 1080, h: 1920, nome: 'Status (9:16)' }, quadrado: { w: 1080, h: 1080, nome: 'Quadrado' } };
+let logoImg = null;
+function loadLogo() {
+  if (logoImg) return logoImg;
+  logoImg = new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = 'logo-laranja.png'; });
+  return logoImg;
+}
+function wrapLines(ctx, text, maxW, maxLines) {
+  const words = String(text || '').split(/\s+/).filter(Boolean), out = [];
+  let line = '';
+  for (const w of words) {
+    const t = line ? line + ' ' + w : w;
+    if (ctx.measureText(t).width > maxW && line) { out.push(line); line = w; } else line = t;
+  }
+  if (line) out.push(line);
+  if (out.length > maxLines) { const keep = out.slice(0, maxLines); let last = keep[maxLines - 1]; while (ctx.measureText(last + '…').width > maxW && last.length) last = last.slice(0, -1); keep[maxLines - 1] = last.trim() + '…'; return keep; }
+  return out;
+}
+async function drawFlyer(canvas, e, kind) {
+  const { w: W, h: H } = FLYER[kind] || FLYER.post;
+  canvas.width = W; canvas.height = H;
+  try { await Promise.all(['900 80px Fraunces', '700 30px Figtree', '600 40px Figtree', '500 30px "IBM Plex Mono"'].map(f => document.fonts.load(f))); } catch (err) {}
+  let logo = null; try { logo = await loadLogo(); } catch (err) {}
+  const c = canvas.getContext('2d');
+  const OR = '#f6b210', BK = '#0b0b0b', WH = '#f4f1ec', MU = '#a9a29a';
+  const pad = 64, inner = W - pad * 2;
+  const tall = H >= 1800, square = H <= 1080;
+  const sp = v => { try { c.letterSpacing = v; } catch (err) {} };
+  c.fillStyle = BK; c.fillRect(0, 0, W, H);
+  // faixa da logo
+  const topH = tall ? 600 : square ? 300 : 420;
+  c.fillStyle = OR; c.fillRect(0, 0, W, topH);
+  if (logo) { const lh = topH - (square ? 50 : 70), lw = lh * logo.width / logo.height; c.drawImage(logo, (W - lw) / 2, (topH - lh) / 2, lw, lh); }
+  // rodapé
+  const footH = square ? 130 : 160, footY = H - footH;
+  c.fillStyle = OR; c.fillRect(0, footY, W, footH);
+  c.fillStyle = BK; c.textBaseline = 'alphabetic';
+  sp('4px'); c.font = '700 26px Figtree'; c.fillText('INSCRIÇÕES', pad, footY + 52);
+  sp('0px'); c.font = '900 ' + (square ? 46 : 54) + 'px Fraunces';
+  const contato = e.contato || 'Fale com a organização';
+  c.fillText(wrapLines(c, contato, inner, 1)[0], pad, footY + (square ? 108 : 118));
+  // corpo
+  let y = topH + (tall ? 90 : square ? 64 : 76);
+  c.fillStyle = OR; sp('5px'); c.font = '700 26px Figtree';
+  c.fillText('TORNEIO DE MAGIC: THE GATHERING', pad, y); sp('0px');
+  y += tall ? 30 : 18;
+  const nameSize = tall ? 96 : square ? 66 : 80;
+  c.font = `900 ${nameSize}px Fraunces`; c.fillStyle = WH;
+  wrapLines(c, e.nome, inner, square ? 2 : 3).forEach(l => { y += nameSize * 1.05; c.fillText(l, pad, y); });
+  y += tall ? 70 : square ? 34 : 48;
+  // data
+  const boxH = square ? 120 : 140, boxW = square ? 120 : 140;
+  c.fillStyle = OR; c.beginPath(); (c.roundRect ? c.roundRect(pad, y, boxW, boxH, 16) : c.rect(pad, y, boxW, boxH)); c.fill();
+  c.fillStyle = BK; c.textAlign = 'center';
+  if (e.data) {
+    const [yy, mm, dd] = e.data.split('-').map(Number);
+    c.font = `900 ${square ? 58 : 66}px Fraunces`; c.fillText(String(dd), pad + boxW / 2, y + boxH * 0.58);
+    sp('3px'); c.font = '700 24px Figtree'; c.fillText(MESES[mm - 1].toUpperCase(), pad + boxW / 2, y + boxH * 0.85); sp('0px');
+    c.textAlign = 'left';
+    const dt = new Date(yy, mm - 1, dd);
+    c.fillStyle = WH; c.font = `600 ${square ? 38 : 42}px Figtree`;
+    c.fillText(DIAS[dt.getDay()].replace(/^./, x => x.toUpperCase()) + (e.hora ? ' · ' + e.hora : ''), pad + boxW + 32, y + boxH * 0.42);
+  } else {
+    c.font = '900 56px Fraunces'; c.fillText('?', pad + boxW / 2, y + boxH * 0.62); c.textAlign = 'left';
+    c.fillStyle = WH; c.font = '600 42px Figtree'; c.fillText('Data a definir', pad + boxW + 32, y + boxH * 0.42);
+  }
+  c.fillStyle = MU; c.font = '500 32px Figtree';
+  const onde = [e.local, e.cidade].filter(Boolean).join(', ');
+  if (onde) c.fillText(wrapLines(c, onde, inner - boxW - 32, 1)[0], pad + boxW + 32, y + boxH * 0.8);
+  y += boxH + (tall ? 80 : square ? 44 : 60);
+  // informações
+  const n = e.players.length, max = +e.vagas || 0;
+  const info = [
+    ['FORMATO', e.formatoNome],
+    ['ESTRUTURA', ESTRUTURAS[e.estrutura].nome + (+e.topCut ? (E.isMulti(e) ? ' + mesa final' : ` + top ${e.topCut}`) : '')],
+    ['INSCRIÇÃO', money(e.taxa)],
+    ['VAGAS', max ? (n ? `${Math.max(0, max - n)} de ${max} restantes` : `${max} jogadores`) : 'Livre'],
+  ];
+  const colW = (inner - 40) / 2, rowH = square ? 100 : 118;
+  info.forEach(([k, v], i) => {
+    const x = pad + (i % 2) * (colW + 40), yy = y + Math.floor(i / 2) * rowH;
+    c.fillStyle = OR; sp('4px'); c.font = '700 22px Figtree'; c.fillText(k, x, yy); sp('0px');
+    c.fillStyle = WH; c.font = `600 ${square ? 32 : 36}px Figtree`;
+    wrapLines(c, v, colW, 1).forEach(l => c.fillText(l, x, yy + (square ? 46 : 52)));
+  });
+  y += rowH * 2 + (tall ? 40 : 10);
+  // premiação, se couber
+  const prem = lines(e.premiacao);
+  if (prem.length && y + 120 < footY - 30) {
+    c.fillStyle = OR; sp('4px'); c.font = '700 22px Figtree'; c.fillText('PREMIAÇÃO', pad, y); sp('0px');
+    c.fillStyle = WH; c.font = '500 32px Figtree';
+    const room = Math.floor((footY - 40 - (y + 20)) / 44);
+    prem.slice(0, Math.max(1, Math.min(room, 6))).forEach((l, i) => c.fillText(wrapLines(c, l, inner, 1)[0], pad, y + 52 + i * 44));
+  }
+}
+function paintFlyer() {
+  const cv = $('#flyer'); const e = ev(); if (!cv || !e) return;
+  drawFlyer(cv, e, S.flyerKind || 'post');
+}
+function tabPromo(e) {
+  const kind = S.flyerKind || 'post';
+  return `<div class="panel stack"><div class="spread"><h3 style="margin:0">Flyer para WhatsApp</h3>
+      <div class="row"><select id="flyer-kind" aria-label="Tamanho do flyer" style="width:auto">${Object.entries(FLYER).map(([k, f]) => `<option value="${k}" ${k === kind ? 'selected' : ''}>${f.nome}</option>`).join('')}</select>
+      <button class="btn primary" data-act="save-flyer">Salvar imagem</button></div></div>
+      <div class="flyer-wrap"><canvas id="flyer" width="1080" height="1350" aria-label="Flyer do evento ${esc(e.nome)}"></canvas>
+      <p class="small muted" style="margin:0;max-width:44ch">O flyer usa os dados do evento: nome, data, local, formato, inscrição, vagas, premiação e o contato para inscrições. Edite o evento e o flyer se atualiza sozinho. No celular, ao salvar, você pode mandar direto para o WhatsApp.</p></div></div>
+  <div class="grid2">
+    <div class="panel stack"><div class="spread"><h3 style="margin:0">Chamada para WhatsApp e Instagram</h3><button class="btn sm primary" data-copy="promo">Copiar texto</button></div>
+      <div class="pre" id="copy-promo">${esc(promoText(e))}</div>
+      <p class="small muted" style="margin:0">Para o evento aparecer na página pública, deixe o status em "Inscrições abertas". Compartilhe o link deste app junto com o texto.</p></div>
+    <div class="panel stack"><div class="spread"><h3 style="margin:0">Resultado do evento</h3><button class="btn sm" data-copy="result">Copiar texto</button></div>
+      <div class="pre" id="copy-result">${esc(resultText(e))}</div></div>
+  </div>`;
+}
+
+// ---------- configurar evento ----------
+function eventForm(e, isNew) {
+  const fmts = Object.values(S.formats).sort((a, b) => a.nome.localeCompare(b.nome));
+  const v = (k, d = '') => esc(e && e[k] != null ? e[k] : d);
+  const estr = e ? e.estrutura : 'swiss';
+  return `<form class="form" id="${isNew ? 'new-event' : 'edit-event'}">
+    <label class="f wide">Nome do evento<input type="text" id="ef-nome" required maxlength="80" value="${v('nome')}" placeholder="Magic Drink #12 · Commander"></label>
+    ${isNew ? `<label class="f wide">Formato e regras<select id="ef-formato">${fmts.map(f => `<option value="${f.id}">${esc(f.nome)}</option>`).join('')}${Object.entries(BASES).map(([k, b]) => `<option value="base:${k}">${esc(b.nome)} (padrão)</option>`).join('')}</select></label>` : ''}
+    <label class="f">Data<input type="date" id="ef-data" value="${v('data')}"></label>
+    <label class="f">Horário<input type="time" id="ef-hora" value="${v('hora', '14:00')}"></label>
+    <label class="f">Local<input type="text" id="ef-local" maxlength="80" value="${v('local')}" placeholder="Nome do bar ou loja"></label>
+    <label class="f">Cidade<input type="text" id="ef-cidade" maxlength="60" value="${v('cidade')}"></label>
+    ${isNew ? '' : `<label class="f wide">Trocar formato e regras<select id="ef-reformato"><option value="">Manter ${esc(e.formatoNome)}</option>${fmts.map(f => `<option value="${f.id}">${esc(f.nome)}</option>`).join('')}${Object.entries(BASES).map(([k, b]) => `<option value="base:${k}">${esc(b.nome)} (padrão)</option>`).join('')}</select><span class="small muted" style="font-weight:400">Substitui as regras, a lista de banidas, a pontuação e o tempo de rodada pelos do formato escolhido.</span></label>
+    <label class="f">Status<select id="ef-status">${Object.entries(STATUS).map(([k, s]) => `<option value="${k}" ${e.status === k ? 'selected' : ''}>${s.nome}</option>`).join('')}</select></label>
+    <label class="f">Estrutura<select id="ef-estrutura" ${e.rounds.length ? 'disabled' : ''}>${Object.entries(ESTRUTURAS).map(([k, s]) => `<option value="${k}" ${estr === k ? 'selected' : ''}>${s.nome}</option>`).join('')}</select>${e.rounds.length ? '<span class="small muted" style="font-weight:400">Para trocar a estrutura com o torneio em andamento, desfaça as rodadas na aba Rodadas.</span>' : ''}</label>
+    <label class="f">Rodadas da fase classificatória<input type="number" id="ef-rodadas" min="0" max="20" value="${v('rodadas')}"></label>
+    <label class="f">Top / mesa final<select id="ef-top">${[[0, 'Sem top'], [2, 'Final (top 2)'], [4, 'Top 4'], [8, 'Top 8'], [16, 'Top 16']].map(([n, l]) => `<option value="${n}" ${+e.topCut === n ? 'selected' : ''}>${E.isMulti(e) && n ? (n === 4 ? 'Mesa final com os 4 primeiros' : l) : l}</option>`).join('')}</select></label>
+    <label class="f">Melhor de<select id="ef-bo">${[1, 3, 5].map(n => `<option ${+e.bestOf === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+    <label class="f">Jogadores por pod / mesa de draft<input type="number" id="ef-pod" min="2" max="10" value="${v('podSize', 4)}"></label>
+    <label class="f">Minutos por rodada<input type="number" id="ef-min" min="0" max="240" value="${v('minutos', 50)}"></label>
+    <label class="f">Pontos por vitória<input type="number" id="ef-pv" min="0" max="20" value="${esc(e.pontos.v)}"></label>
+    <label class="f">Pontos por empate<input type="number" id="ef-pe" min="0" max="20" value="${esc(e.pontos.e)}"></label>
+    <label class="f">Pontos por derrota<input type="number" id="ef-pd" min="0" max="20" value="${esc(e.pontos.d)}"></label>`}
+    <label class="f">Vagas<input type="number" id="ef-vagas" min="0" max="512" value="${v('vagas', 32)}"></label>
+    <label class="f">Inscrição (R$)<input type="number" id="ef-taxa" min="0" step="0.5" value="${v('taxa', 0)}"></label>
+    <label class="f">Contato para inscrições<input type="text" id="ef-contato" maxlength="80" value="${v('contato')}" placeholder="WhatsApp ou @instagram"></label>
+    <label class="f wide">Premiação<textarea id="ef-premiacao" placeholder="1º lugar: …">${v('premiacao')}</textarea></label>
+    <label class="f wide">Descrição<textarea id="ef-descricao">${v('descricao')}</textarea></label>
+    ${isNew ? '' : `<label class="f wide">Regras do evento (uma por linha)<textarea id="ef-regras" style="min-height:160px">${v('regras')}</textarea></label>
+    <label class="f wide">Cartas banidas ou restritas (uma por linha)<textarea id="ef-banlist">${v('banlist')}</textarea></label>
+    <label class="check wide"><input type="checkbox" id="ef-decks" ${e.mostrarDecks ? 'checked' : ''}> Mostrar os decks dos jogadores na página pública</label>`}
+    <div class="wide row"><button class="btn primary" type="submit">${isNew ? 'Criar evento' : 'Salvar alterações'}</button>${isNew ? '<button class="btn" type="button" data-act="cancel-new">Cancelar</button>' : ''}</div>
+  </form>`;
+}
+function tabConfig(e) {
+  return `<div class="panel">${eventForm(e, false)}</div>
+    <div class="panel spread"><div><b>Apagar evento</b><div class="small muted">Remove o evento, os jogadores e todos os resultados.</div></div>${armBtn('del-event', 'Apagar evento', 'Confirmar exclusão')}</div>`;
+}
+
+// ---------- organizar ----------
+function viewAdmin() {
+  const evs = sortedEvents();
+  let h = `<div class="spread"><div><div class="eyebrow">Organização</div><h1 class="display" style="font-size:28px">Seus eventos</h1></div>${S.newEvent ? '' : '<button class="btn primary" data-act="new-event">Criar evento</button>'}</div>`;
+  if (S.newEvent) h += `<div class="panel"><h3>Novo evento</h3>${eventForm(null, true)}</div>`;
+  if (!evs.length) return h + `<div class="empty">Nenhum evento ainda. Crie o primeiro: escolha um formato, a data e o local. Depois adicione jogadores e gere as rodadas.</div>`;
+  h += `<div class="panel" style="padding:0"><div class="tbl-wrap"><table><thead><tr><th>Data</th><th>Evento</th><th>Formato</th><th>Status</th><th class="r">Jogadores</th><th class="r">Rodadas</th></tr></thead><tbody>
+    ${evs.map(e => `<tr style="cursor:pointer" data-open="${e.id}"><td class="num">${e.data ? e.data.split('-').reverse().join('/') : '—'}</td><td><a href="#" data-open="${e.id}"><b>${esc(e.nome)}</b></a></td><td>${esc(e.formatoNome)}<div class="small muted">${esc(ESTRUTURAS[e.estrutura].nome)}</div></td><td>${statusChip(e.status)}</td><td class="r num">${e.players.length}${+e.vagas ? '/' + e.vagas : ''}${pendingFor(e).length ? ` <span class="chip gold">+${pendingFor(e).length}</span>` : ''}</td><td class="r num">${e.rounds.length}</td></tr>`).join('')}
+  </tbody></table></div></div>`;
+  return h;
+}
+
+// ---------- formatos e regras ----------
+function viewFormats() {
+  const fmts = Object.values(S.formats).sort((a, b) => a.nome.localeCompare(b.nome));
+  const f = S.formatId && (S.formatId === 'new' ? S.formatDraft : S.formats[S.formatId]);
+  let h = `<div class="spread"><div><div class="eyebrow">Biblioteca</div><h1 class="display" style="font-size:28px">Formatos e regras</h1></div>
+    <div class="row"><select id="new-base" aria-label="Formato base">${Object.entries(BASES).map(([k, b]) => `<option value="${k}">${b.nome}</option>`).join('')}</select><button class="btn primary" data-act="new-format">Novo formato</button></div></div>
+    <p class="muted" style="margin:0;max-width:70ch">Monte suas regras da casa uma vez e reaproveite em cada evento. Ao criar um evento, as regras do formato são copiadas para ele e podem ser ajustadas só naquele evento.</p>`;
+  if (f) h += formatEditor(f);
+  h += fmts.length ? `<div class="grid3">${fmts.map(x => `<div class="panel stack" style="gap:8px">
+      <div class="spread"><h3 class="display" style="margin:0;font-size:17px">${esc(x.nome)}</h3>${manaPips(BASES[x.base] && BASES[x.base].mana)}</div>
+      <div class="row"><span class="chip">${esc(ESTRUTURAS[x.estrutura].nome)}</span><span class="chip">${x.modo === 'multi' ? `Multijogador · ${x.podSize || 4} por mesa` : `1 contra 1 · Md${x.bestOf}`}</span></div>
+      <div class="small muted">${lines(x.regras).length} regras · ${lines(x.banlist).length} cartas banidas · ${x.minutos || '—'} min</div>
+      <div class="row"><button class="btn sm" data-editfmt="${x.id}">Editar</button>${armBtn('delfmt:' + x.id, 'Apagar', 'Confirmar')}</div></div>`).join('')}</div>`
+    : `<div class="empty">Nenhum formato salvo. Escolha uma base acima e clique em Novo formato.</div>`;
+  return h;
+}
+function formatEditor(f) {
+  return `<div class="panel"><h3>${S.formatId === 'new' ? 'Novo formato' : 'Editar formato'}</h3><form class="form" id="fmt-form">
+    <label class="f wide">Nome<input type="text" id="ff-nome" required maxlength="60" value="${esc(f.nome)}"></label>
+    <label class="f">Modo de jogo<select id="ff-modo"><option value="1v1" ${f.modo === '1v1' ? 'selected' : ''}>1 contra 1</option><option value="multi" ${f.modo === 'multi' ? 'selected' : ''}>Multijogador</option></select></label>
+    <label class="f">Estrutura padrão<select id="ff-estrutura">${Object.entries(ESTRUTURAS).map(([k, s]) => `<option value="${k}" ${f.estrutura === k ? 'selected' : ''}>${s.nome}</option>`).join('')}</select></label>
+    <label class="f">Melhor de<select id="ff-bo">${[1, 3, 5].map(n => `<option ${+f.bestOf === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+    <label class="f">Jogadores por pod / mesa<input type="number" id="ff-pod" min="2" max="10" value="${esc(f.podSize || 4)}"></label>
+    <label class="f">Minutos por rodada<input type="number" id="ff-min" min="0" max="240" value="${esc(f.minutos || 50)}"></label>
+    <label class="f">Pontos V / E / D<input type="text" id="ff-pts" value="${esc([f.pontos.v, f.pontos.e, f.pontos.d].join(' / '))}" placeholder="3 / 1 / 0"></label>
+    <label class="f wide">Regras (uma por linha)<textarea id="ff-regras" style="min-height:180px">${esc(f.regras)}</textarea></label>
+    <label class="f wide">Cartas banidas ou restritas (uma por linha)<textarea id="ff-banlist">${esc(f.banlist)}</textarea></label>
+    <div class="wide row"><button class="btn primary" type="submit">Salvar formato</button><button class="btn" type="button" data-act="cancel-fmt">Cancelar</button></div>
+  </form></div>`;
+}
+function formatFromBase(k) {
+  const b = BASES[k];
+  const regras = [b.deck,
+    b.modo === 'multi' ? 'Ordem de turno definida pelos assentos sorteados na mesa.' : 'Partidas em melhor de ' + b.bestOf + '. O perdedor da partida anterior escolhe quem começa.',
+    b.modo === 'multi' ? 'Ao fim do tempo, o jogador ativo termina o turno e a partida é empate se não houver vencedor.' : 'Ao fim do tempo, o jogador ativo termina o turno e são jogados mais 5 turnos (turno 0 + 5).',
+    'Atrasos de mais de 10 minutos contam como derrota na rodada.',
+    'Decisões de juiz da organização são finais.'].filter(Boolean).join('\n');
+  return { id: E.rid(), nome: b.nome + (k === 'custom' ? '' : ' da casa'), base: k, modo: b.modo, estrutura: b.estrutura, bestOf: b.bestOf, podSize: b.podSize || (b.estrutura === 'draft' ? 8 : 4),
+    minutos: b.modo === 'multi' ? 75 : 50, pontos: b.modo === 'multi' ? { v: 3, e: 1, d: 0 } : { v: 3, e: 1, d: 0 }, regras, banlist: '' };
+}
+
+// ---------- eventos de interface ----------
+function readNum(id, d = 0) { const el = $('#' + id); if (!el) return d; const n = parseFloat(el.value); return isNaN(n) ? d : n; }
+function readStr(id) { const el = $('#' + id); return el ? el.value.trim() : ''; }
+
+document.addEventListener('click', async ev0 => {
+  const t = ev0.target.closest('[data-nav],[data-open],[data-tab],[data-act],[data-approve],[data-drop],[data-editfmt],[data-copy],[data-lightbox],[data-lbnav],[data-lbclose],#brand');
+  if (!t) return;
+  if (t.id === 'brand') { S.view = 'home'; render(); return; }
+  if (t.dataset.nav) { S.view = t.dataset.nav; S.newEvent = false; render(); window.scrollTo(0, 0); return; }
+  if (t.dataset.open) { ev0.preventDefault(); S.view = 'event'; S.eventId = t.dataset.open; S.tab = 'info'; watchMedia(S.eventId); render(); window.scrollTo(0, 0); return; }
+  if (t.dataset.lightbox) { S.lightbox = t.dataset.lightbox; render(); return; }
+  if (t.dataset.lbnav) { const i = S.media.findIndex(m => m.id === S.lightbox) + +t.dataset.lbnav; if (S.media[i]) S.lightbox = S.media[i].id; render(); return; }
+  if (t.hasAttribute('data-lbclose')) { S.lightbox = null; render(); return; }
+  if (t.dataset.tab) { S.tab = t.dataset.tab; render(); return; }
+  if (t.dataset.editfmt) { S.formatId = t.dataset.editfmt; render(); window.scrollTo(0, 0); return; }
+  if (t.dataset.copy) {
+    const txt = $('#copy-' + t.dataset.copy).textContent;
+    try { await navigator.clipboard.writeText(txt); toast('Texto copiado'); }
+    catch (e) { const r = document.createRange(); r.selectNodeContents($('#copy-' + t.dataset.copy)); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('Texto selecionado. Use Ctrl+C para copiar.'); }
+    return;
+  }
+  if (t.dataset.approve) {
+    const uid = t.dataset.approve, reg = S.regs[uid];
+    return mutate(e => {
+      if (+e.vagas && e.players.length >= +e.vagas) toast('Atenção: o evento passou do limite de vagas.');
+      e.players.push({ id: E.rid(), nome: reg.nome, deck: reg.eventos[e.id].deck || '', regUid: uid, contato: reg.contato || '' });
+    });
+  }
+  if (t.dataset.drop) return mutate(e => { const p = e.players.find(x => x.id === t.dataset.drop); p.dropped = !p.dropped; });
+
+  const act = t.dataset.act;
+  if (!act) return;
+  if (act === 'logout') { try { await window.MD_AUTH.signOut(); } catch (err) {} location.reload(); return; }
+  if (act === 'save-flyer') {
+    const cv = $('#flyer'), e = ev(); if (!cv || !e) return;
+    await drawFlyer(cv, e, S.flyerKind || 'post');
+    const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+    const filename = 'flyer-' + (e.nome || 'magic-drink').normalize('NFD').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase() + '.png';
+    if (!S.downloads) { toast('Não foi possível salvar aqui. No celular, toque e segure no flyer para salvar a imagem.'); return; }
+    try { const r = await S.downloads.save({ filename, data: blob }); if (r && r.status === 'saved') toast('Flyer salvo'); }
+    catch (err) { if (err && err.code !== 'cancelled') toast('Não foi possível salvar o flyer.'); }
+    return;
+  }
+  if (act === 'edit-pairs') { S.editPairs = !S.editPairs; render(); return; }
+  if (act === 'new-event') { S.view = 'admin'; S.newEvent = true; render(); window.scrollTo(0, 0); return; }
+  if (act === 'cancel-new') { S.newEvent = false; render(); return; }
+  if (act === 'cancel-fmt') { S.formatId = null; render(); return; }
+  if (act === 'new-format') { S.formatDraft = formatFromBase($('#new-base').value); S.formatId = 'new'; render(); return; }
+  if (act === 'add-players') {
+    const rows = lines($('#add-players').value);
+    if (!rows.length) { toast('Digite pelo menos um nome.'); return; }
+    $('#add-players').value = '';
+    return mutate(e => {
+      rows.forEach(r => { const [nome, deck] = r.split(';').map(s => s.trim()); if (nome) e.players.push({ id: E.rid(), nome: nome.slice(0, 60), deck: (deck || '').slice(0, 80) }); });
+      if (e.estrutura === 'roundrobin' && e.rounds.length) toast('Em todos contra todos, quem entra depois do início não é incluído na tabela.');
+    }).then(() => toast(rows.length === 1 ? 'Jogador adicionado' : `${rows.length} jogadores adicionados`));
+  }
+  if (act === 'next-round') return mutate(e => {
+    const r = E.nextRound(e); e.rounds.push(r);
+    if (!+e.rodadas && !isElim(e)) e.rodadas = E.suggestedRounds(e.players.filter(p => !p.dropped).length, e.estrutura);
+    if (e.status !== 'andamento' && e.status !== 'encerrado') e.status = 'andamento';
+  }).then(() => { S.tab = 'rodadas'; render(); });
+  if (act === 'cut') return mutate(e => { e.rounds.push(E.startCut(e)); });
+  if (act === 'draft-pods') return mutate(e => { E.assignDraftPods(e); }).then(() => toast('Mesas de draft sorteadas'));
+  if (act === 'clock') return mutate(e => { e.rounds[e.rounds.length - 1].inicio = Date.now(); });
+  if (act === 'undo-round') { if (!armed(act)) return; return mutate(e => {
+    const r = e.rounds.pop();
+    if (r.stage === 'elim' && !E.stageRounds(e, 'elim').length || r.stage === 'final') delete e.cutSeeds;
+    if (!e.rounds.length) { delete e.seeds; delete e.rrOrder; }
+  }); }
+  if (act === 'del-event') { if (!armed(act)) return; const id = S.eventId; S.view = 'admin'; delete S.events[id]; render(); return store.remove('events', id); }
+  if (act === 'cancel-reg') { if (!armed(act)) return; const r = clone(S.myReg); delete r.eventos[S.eventId]; S.myReg = r; render(); return store.save('regs', S.uid, r); }
+  if (act.startsWith('rm:')) { if (!armed(act)) return; const id = act.slice(3); return mutate(e => { e.players = e.players.filter(p => p.id !== id); }); }
+  if (act.startsWith('reject:')) { if (!armed(act)) return; const uid = act.slice(7); const r = clone(S.regs[uid]); delete r.eventos[S.eventId]; S.regs[uid] = r; render(); return store.save('regs', uid, r); }
+  if (act.startsWith('delmedia:')) {
+    if (!armed(act)) return; const id = act.slice(9), m = S.media.find(x => x.id === id); if (!m) return;
+    S.lightbox = null; render();
+    try { await S.assets.delete(m.asset); } catch (err) {}
+    try { await S.db.doc('events/' + S.eventId + '/media/' + id).delete(); toast('Mídia apagada'); } catch (err) { toast('Não foi possível apagar.'); }
+    return;
+  }
+  if (act.startsWith('delfmt:')) { if (!armed(act)) return; const id = act.slice(7); delete S.formats[id]; if (S.formatId === id) S.formatId = null; render(); return store.remove('formats', id); }
+});
+
+document.addEventListener('change', ev0 => {
+  const t = ev0.target;
+  if (t.dataset.paid) return mutate(e => { const p = e.players.find(x => x.id === t.dataset.paid); p.pago = t.checked; });
+  if (t.dataset.result) {
+    const [rn, mid] = t.dataset.result.split(':'), v = t.value;
+    return mutate(e => {
+      const m = e.rounds.find(r => r.n === +rn).matches.find(x => x.id === mid);
+      if (!v) m.result = null;
+      else if (v === 'draw') m.result = { draw: true };
+      else if (v.startsWith('w:')) m.result = { winner: v.slice(2) };
+      else { const [a, b, d] = v.split('-').map(Number); m.result = { a, b, d }; }
+      const later = e.rounds.findIndex(r => r.n === +rn) < e.rounds.length - 1;
+      if (later) toast('Resultado alterado numa rodada anterior. Os pareamentos já gerados não mudam.');
+    });
+  }
+  if (t.hasAttribute && t.hasAttribute('data-upload')) { const files = [...t.files]; t.value = ''; if (files.length) uploadMedia(files); return; }
+  if (t.dataset.legenda) {
+    const id = t.dataset.legenda;
+    return S.db.doc('events/' + S.eventId + '/media/' + id).update({ legenda: t.value.trim() }).then(() => toast('Legenda salva'), () => toast('Não foi possível salvar a legenda.'));
+  }
+  if (t.dataset.pname || t.dataset.pdeck) {
+    const id = t.dataset.pname || t.dataset.pdeck, v = t.value.trim();
+    if (t.dataset.pname && !v) { toast('O nome não pode ficar vazio.'); return; }
+    return mutate(e => { const p = e.players.find(x => x.id === id); if (t.dataset.pname) p.nome = v; else p.deck = v; }).then(() => toast('Jogador atualizado'));
+  }
+  if (t.dataset.swap) {
+    const [rn, mid, idx] = t.dataset.swap.split(':'), nid = t.value;
+    return mutate(e => {
+      const r = e.rounds.find(x => x.n === +rn), m = r.matches.find(x => x.id === mid), old = m.players[+idx];
+      const other = r.matches.find(x => x.players.includes(nid));
+      if (other) { const j = other.players.indexOf(nid); other.players[j] = old; other.result = other.bye ? other.result : null; }
+      m.players[+idx] = nid; if (!m.bye) m.result = null;
+    }).then(() => toast('Mesas atualizadas. Confira os resultados das mesas alteradas.'));
+  }
+  if (t.id === 'flyer-kind') { S.flyerKind = t.value; paintFlyer(); return; }
+  if (t.id === 'ff-modo' && t.value === 'multi') { const s = $('#ff-estrutura'); if (s) s.value = 'pods'; }
+});
+
+document.addEventListener('submit', async ev0 => {
+  ev0.preventDefault();
+  const f = ev0.target;
+  if (f.id === 'login-form') {
+    try { await window.MD_AUTH.signIn(readStr('lg-email'), $('#lg-senha').value); location.reload(); }
+    catch (err) { toast('E-mail ou senha incorretos.'); }
+    return;
+  }
+  if (f.id === 'signup') {
+    const nome = readStr('su-nome'); if (!nome) return;
+    const r = clone(S.myReg || { eventos: {} }); r.nome = nome; r.contato = readStr('su-contato'); r.eventos = r.eventos || {};
+    r.eventos[S.eventId] = { deck: readStr('su-deck'), em: Date.now() };
+    S.myReg = r; document.activeElement && document.activeElement.blur(); render();
+    try { await store.save('regs', S.uid, r); toast('Inscrição enviada. A organização vai confirmar.'); } catch (e) {}
+    return;
+  }
+  if (f.id === 'new-event') {
+    const sel = readStr('ef-formato');
+    const fm = sel.startsWith('base:') ? formatFromBase(sel.slice(5)) : S.formats[sel];
+    if (!fm) { toast('Crie ou escolha um formato primeiro.'); return; }
+    const e = {
+      id: E.rid(), nome: readStr('ef-nome'), data: readStr('ef-data'), hora: readStr('ef-hora'), local: readStr('ef-local'), cidade: readStr('ef-cidade'),
+      vagas: readNum('ef-vagas'), taxa: readNum('ef-taxa'), contato: readStr('ef-contato'), premiacao: readStr('ef-premiacao'), descricao: readStr('ef-descricao'),
+      formatoId: fm.id, formatoNome: fm.nome, base: fm.base, mana: (BASES[fm.base] || BASES.custom).mana, modo: fm.modo, estrutura: fm.estrutura, bestOf: +fm.bestOf,
+      podSize: +fm.podSize || 4, minutos: +fm.minutos || 50, pontos: clone(fm.pontos), regras: fm.regras, banlist: fm.banlist,
+      rodadas: 0, topCut: 0, status: 'rascunho', mostrarDecks: fm.modo === 'multi', players: [], rounds: [], criadoEm: Date.now(),
+    };
+    document.activeElement && document.activeElement.blur();
+    S.newEvent = false; S.view = 'event'; S.eventId = e.id; S.tab = 'config'; watchMedia(e.id);
+    await saveEvent(e); toast('Evento criado como rascunho. Revise as regras e abra as inscrições.');
+    return;
+  }
+  if (f.id === 'edit-event') {
+    document.activeElement && document.activeElement.blur();
+    return mutate(e => {
+      Object.assign(e, { nome: readStr('ef-nome'), data: readStr('ef-data'), hora: readStr('ef-hora'), local: readStr('ef-local'), cidade: readStr('ef-cidade'),
+        status: readStr('ef-status'), rodadas: readNum('ef-rodadas'), topCut: readNum('ef-top'), bestOf: readNum('ef-bo', 3), podSize: readNum('ef-pod', 4),
+        minutos: readNum('ef-min'), pontos: { v: readNum('ef-pv', 3), e: readNum('ef-pe', 1), d: readNum('ef-pd', 0) }, vagas: readNum('ef-vagas'), taxa: readNum('ef-taxa'),
+        contato: readStr('ef-contato'), premiacao: readStr('ef-premiacao'), descricao: readStr('ef-descricao'), regras: $('#ef-regras').value, banlist: $('#ef-banlist').value,
+        mostrarDecks: $('#ef-decks').checked });
+      const rf = readStr('ef-reformato');
+      if (rf) {
+        const fm = rf.startsWith('base:') ? formatFromBase(rf.slice(5)) : S.formats[rf];
+        Object.assign(e, { formatoId: fm.id, formatoNome: fm.nome, base: fm.base, mana: (BASES[fm.base] || BASES.custom).mana, bestOf: +fm.bestOf,
+          podSize: +fm.podSize || 4, minutos: +fm.minutos || 50, pontos: clone(fm.pontos), regras: fm.regras, banlist: fm.banlist });
+        if (!e.rounds.length) { e.estrutura = fm.estrutura; e.modo = fm.modo; }
+      } else if (!e.rounds.length) { e.estrutura = readStr('ef-estrutura'); if (e.estrutura === 'pods') e.modo = 'multi'; else e.modo = '1v1'; }
+    }).then(() => { toast('Alterações salvas'); S.tab = 'info'; render(); window.scrollTo(0, 0); });
+  }
+  if (f.id === 'fmt-form') {
+    const base = S.formatId === 'new' ? S.formatDraft : S.formats[S.formatId];
+    const [v, e, d] = readStr('ff-pts').split(/[\/,;\s]+/).filter(Boolean).map(Number);
+    const x = Object.assign(clone(base), { nome: readStr('ff-nome'), modo: readStr('ff-modo'), estrutura: readStr('ff-estrutura'), bestOf: readNum('ff-bo', 3), podSize: readNum('ff-pod', 4),
+      minutos: readNum('ff-min', 50), pontos: { v: isNaN(v) ? 3 : v, e: isNaN(e) ? 1 : e, d: isNaN(d) ? 0 : d }, regras: $('#ff-regras').value, banlist: $('#ff-banlist').value });
+    document.activeElement && document.activeElement.blur();
+    S.formats[x.id] = x; S.formatId = null; render();
+    try { await store.save('formats', x.id, x); toast('Formato salvo'); } catch (err) {}
+  }
+});
+
+document.addEventListener('keydown', k => { if (k.key === 'Escape' && S.lightbox) { S.lightbox = null; render(); } });
+
+// relógio da rodada: só atualiza o texto
+function tickClock() {
+  document.querySelectorAll('[data-clock]').forEach(el => {
+    const left = +el.dataset.clock - Date.now();
+    const s = Math.abs(Math.round(left / 1000));
+    el.textContent = (left < 0 ? '+' : '') + String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    el.classList.toggle('over', left < 0);
+  });
+}
+setInterval(tickClock, 1000);
+
+// ---------- inicialização ----------
+function startWatching() {
+  store.watch('events', d => { S.events = d; render(); });
+  store.watch('formats', d => { S.formats = d; render(); });
+  if (S.admin) store.watch('regs', d => { S.regs = d; S.myReg = S.uid ? d[S.uid] || null : null; render(); });
+  else if (S.mode === 'db' && S.uid) S.db.doc('regs/' + S.uid).onSnapshot(s => { S.myReg = s.exists ? clone(s.data()) : null; render(); }, () => {});
+}
+async function boot() {
+  render();
+  let db = null, user = null;
+  try { if (window.claude && window.claude.use) [db, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]); } catch (e) {}
+  if (db) {
+    S.mode = 'db'; S.db = db; S.user = user;
+    claude.use('assets').then(a => { S.assets = a; render(); }).catch(() => {});
+    claude.use('downloads').then(d => { S.downloads = d; }).catch(() => {});
+    if (user) {
+      try { S.admin = await user.canEdit(); } catch (e) {}
+      try { S.uid = await user.id(); } catch (e) {}
+      try { const c = await user.can('data.write'); S.canWrite = c !== false; } catch (e) { S.canWrite = true; }
+    }
+  } else { S.mode = 'local'; S.admin = true; S.canWrite = true; S.uid = 'local'; }
+  if (S.admin && S.view === 'home' && !location.hash) S.view = 'home';
+  startWatching();
+  render();
+}
+boot();
+</script>
+
+</body>
+</html>
