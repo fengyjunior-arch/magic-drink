@@ -170,6 +170,11 @@ textarea { min-height: 96px; resize: vertical; line-height: 1.45; }
 .elx-adm { margin-top: 8px; font-size: 13px; } .elx-adm summary { cursor: pointer; color: var(--muted); }
 .elx-row { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; justify-content: space-between; padding: 6px 0; border-top: 1px solid var(--line); }
 .elx-row .check { font-size: 13px; gap: 4px; }
+.fb-pick { display: flex; gap: 6px; } .fb-pick label { cursor: pointer; } .fb-pick input { position: absolute; opacity: 0; pointer-events: none; }
+.fb-pick span { font-size: 34px; line-height: 1; color: #444; transition: color .1s; }
+.fb-pick:has(input:checked) label span { color: var(--brand); } .fb-pick label:has(input:checked) ~ label span { color: #444; }
+.fb-pick input:focus-visible + span { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
+.fb-stars { color: var(--brand); font-size: 22px; letter-spacing: 2px; } .fb-item { border-top: 1px solid var(--line); padding-top: 10px; display: grid; gap: 4px; }
 .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
 .badge { background: var(--surface-2); border-radius: 12px; padding: 12px 14px; display: grid; gap: 2px; border-left: 4px solid var(--brand); }
 .hero { background: var(--surface); border-radius: 14px; padding: 28px; display: grid; align-items: center; }
@@ -872,7 +877,7 @@ function tabInfo(e) {
     else signup = `<p class="muted small" style="margin:0">Para se inscrever, fale com a organização${e.contato ? ': <b class="mono">' + esc(e.contato) + '</b>' : ''}.</p>`;
   }
   const regras = lines(e.regras), ban = lines(e.banlist);
-  const extras = e.status === 'encerrado' ? '' : checkinBlock(e, me, myPending) + pixBlock(e, me, myPending) + myListBlock(e, me, myPending);
+  const extras = e.status === 'encerrado' ? feedbackBlock(e, me) + feedbackAdmin(e) : feedbackAdmin(e) + checkinBlock(e, me, myPending) + pixBlock(e, me, myPending) + myListBlock(e, me, myPending);
   return `${me && e.rounds.length ? myTableCard(e, me) : ''}<div class="grid2">
     <div class="stack">
       ${e.descricao ? `<div class="panel"><p style="margin:0;white-space:pre-wrap">${esc(e.descricao)}</p></div>` : ''}
@@ -911,6 +916,26 @@ function myListBlock(e, me, pending) {
   const cur = me ? deckInfo(e, me) : myRegEv(e) || {};
   return `<div class="panel"><details ${cur.lista ? '' : 'open'}><summary>Sua lista do deck${cur.valor != null && cur.valor !== '' ? ' · ' + brl(cur.valor) : ''}</summary>
     <form class="form" id="my-list" style="margin-top:10px">${listFields(e, cur)}<div class="wide"><button class="btn primary" type="submit">Salvar lista</button></div></form></details></div>`;
+}
+// avaliação do evento: fica na inscrição do jogador, então só ele e a organização veem
+function feedbackBlock(e, me) {
+  if (e.status !== 'encerrado' || S.admin || !S.uid || !myRegEv(e) || !me) return '';
+  const a = (myRegEv(e) || {}).avaliacao;
+  if (a && a.nota && !a.editando) return `<div class="panel stack"><div class="eyebrow">Sua avaliação</div><div class="fb-stars" aria-label="${a.nota} de 5">${'★'.repeat(a.nota)}<span class="muted">${'★'.repeat(5 - a.nota)}</span></div>${a.comentario ? `<div class="small" style="white-space:pre-wrap">${esc(a.comentario)}</div>` : ''}<div><button class="btn sm" data-act="fb-edit">Mudar avaliação</button></div></div>`;
+  return `<div class="panel stack" style="border-color:var(--brand)"><div class="eyebrow">Como foi o evento?</div>
+    <div class="small muted">Sua nota e seu comentário vão só para a organização.</div>
+    <div class="fb-pick" role="radiogroup" aria-label="Nota de 1 a 5">${[1, 2, 3, 4, 5].map(n => `<label title="${n} de 5"><input type="radio" name="fb-nota" value="${n}" ${a && a.nota === n ? 'checked' : ''}><span>★</span></label>`).join('')}</div>
+    <label class="f">O que foi bom e o que dá para melhorar? (opcional)<textarea id="fb-coment" maxlength="600">${esc(a && a.comentario || '')}</textarea></label>
+    <div><button class="btn primary" data-act="fb-send">Enviar avaliação</button></div></div>`;
+}
+function feedbackAdmin(e) {
+  if (!S.admin) return '';
+  const list = e.players.map(p => ({ p, a: (regEv(e, p.regUid) || {}).avaliacao })).filter(x => x.a && x.a.nota);
+  if (!list.length) return e.status === 'encerrado' ? '<div class="panel small muted">Nenhuma avaliação ainda. Os jogadores inscritos pelo site veem o pedido de avaliação na página do evento.</div>' : '';
+  const avg = list.reduce((t, x) => t + x.a.nota, 0) / list.length;
+  return `<div class="panel stack"><div class="spread"><h3 style="margin:0">Avaliações</h3><span class="chip gold num">${avg.toFixed(1).replace('.', ',')} de 5 · ${list.length} ${list.length === 1 ? 'resposta' : 'respostas'}</span></div>
+    <div class="small muted">Só a organização vê.</div>
+    ${list.sort((a, b) => b.a.em - a.a.em).map(x => `<div class="fb-item"><div class="spread"><b>${esc(x.p.nome)}</b><span class="fb-stars small">${'★'.repeat(x.a.nota)}<span class="muted">${'★'.repeat(5 - x.a.nota)}</span></span></div>${x.a.comentario ? `<div class="small" style="white-space:pre-wrap">${esc(x.a.comentario)}</div>` : ''}</div>`).join('')}</div>`;
 }
 function checkinBlock(e, me, pending) {
   if (!e.checkinAberto) return '';
@@ -1255,7 +1280,7 @@ function elixirTop(e) {
   return rows.length ? rows.filter(x => x.n === rows[0].n) : [];
 }
 function elixirTracker(e, r, m, me) {
-  const i = emblemIdx(e, me, r.n); if (i == null || m.bye || m.wait) return '';
+  const i = emblemIdx(e, me, r.n); if (i == null || m.bye || m.wait || e.status === 'encerrado') return '';
   const em = EMBLEMAS[i], used = usedFor(e, me, repKey(r, m)), adj = !!(e.elixirAdm && e.elixirAdm[repKey(r, m)] && e.elixirAdm[repKey(r, m)][me.id]);
   return `<div class="elixir stack">
     <div class="row" style="align-items:center;flex-wrap:nowrap"><button class="emb-mini" type="button" data-emb="${i}" aria-label="Ver emblema ${em.n}"><img src="emblemas/${em.k}-mini.jpg" alt="" width="400" height="560"></button>
@@ -1472,9 +1497,79 @@ async function drawFlyer(canvas, e, kind) {
     prem.slice(0, Math.max(1, Math.min(room, 6))).forEach((l, i) => c.fillText(wrapLines(c, l, inner, 1)[0], pad, y + 52 + i * 44));
   }
 }
+// arte do resultado: campeão, pódio, deck vencedor e quem mais bebeu Elixir
+function podium(e) {
+  const win = eventWinner(e) || champion(e);
+  const ids = (e.rounds.length ? E.standings(e, 'main').filter(x => !x.p.espera).map(x => x.p.id) : []).filter(id => id !== win);
+  return (win ? [win] : []).concat(ids).slice(0, 3).map(id => e.players.find(p => p.id === id)).filter(Boolean);
+}
+async function drawResult(canvas, e, kind) {
+  const { w: W, h: H } = FLYER[kind] || FLYER.post;
+  canvas.width = W; canvas.height = H;
+  try { await Promise.all(['900 80px Fraunces', '700 30px Figtree', '600 40px Figtree'].map(f => document.fonts.load(f))); } catch (err) {}
+  let logo = null; try { logo = await loadLogo(); } catch (err) {}
+  const c = canvas.getContext('2d');
+  const OR = '#f6b210', BK = '#0b0b0b', WH = '#f4f1ec', MU = '#a9a29a', CARD = '#1b1b1b';
+  const pad = 64, inner = W - pad * 2, tall = H >= 1800, square = H <= 1080;
+  const sp = v => { try { c.letterSpacing = v; } catch (err) {} };
+  c.fillStyle = BK; c.fillRect(0, 0, W, H); c.textBaseline = 'alphabetic';
+  // topo com logo e nome do evento
+  const topH = tall ? 420 : square ? 220 : 270;
+  c.fillStyle = OR; c.fillRect(0, 0, W, topH);
+  const lh = topH - (square ? 50 : 70), lw = logo ? lh * logo.width / logo.height : 0;
+  if (logo) c.drawImage(logo, pad, (topH - lh) / 2, lw, lh);
+  const tx = pad + lw + 36, tw = W - tx - pad;
+  c.fillStyle = BK; sp('4px'); c.font = '700 24px Figtree';
+  c.fillText('RESULTADO' + (e.data ? ' · ' + e.data.split('-').reverse().join('/') : ''), tx, topH / 2 - (square ? 30 : 40)); sp('0px');
+  const tSize = square ? 44 : 52; c.font = `900 ${tSize}px Fraunces`;
+  wrapLines(c, e.nome, tw, 2).forEach((l, i) => c.fillText(l, tx, topH / 2 + 18 + i * tSize * 1.05));
+  // rodapé
+  const footH = square ? 110 : 140, footY = H - footH;
+  c.fillStyle = OR; c.fillRect(0, footY, W, footH);
+  c.fillStyle = BK; c.font = `900 ${square ? 40 : 46}px Fraunces`; c.textAlign = 'center';
+  c.fillText('Mana acaba. A bebida não!', W / 2, footY + footH / 2 + 15); c.textAlign = 'left';
+  const pod = podium(e);
+  // o corpo é desenhado uma vez para medir e de novo centralizado entre o topo e o rodapé
+  const body = off => {
+  let y = topH + (tall ? 110 : square ? 60 : 80) + off;
+  c.fillStyle = OR; sp('6px'); c.font = '700 28px Figtree'; c.fillText('CAMPEÃO', pad, y); sp('0px');
+  const champ = pod[0], cSize = tall ? 120 : square ? 84 : 100;
+  c.fillStyle = WH; c.font = `900 ${cSize}px Fraunces`;
+  wrapLines(c, champ ? champ.nome : 'A definir', inner, 2).forEach(l => { y += cSize * 1.02; c.fillText(l, pad, y); });
+  if (champ && champ.deck) { y += 54; c.fillStyle = MU; c.font = '600 38px Figtree'; c.fillText(wrapLines(c, 'Deck: ' + champ.deck, inner, 1)[0], pad, y); }
+  y += tall ? 90 : square ? 44 : 64;
+  // 2º e 3º
+  const rowH = square ? 92 : 108, gap = 18;
+  pod.slice(1).forEach((p, i) => {
+    c.fillStyle = CARD; c.beginPath(); (c.roundRect ? c.roundRect(pad, y, inner, rowH, 18) : c.rect(pad, y, inner, rowH)); c.fill();
+    c.fillStyle = OR; c.font = `900 ${square ? 44 : 50}px Fraunces`; c.fillText((i + 2) + 'º', pad + 28, y + rowH * 0.66);
+    c.fillStyle = WH; c.font = `600 ${square ? 36 : 40}px Figtree`;
+    c.fillText(wrapLines(c, p.nome, inner * 0.5, 1)[0], pad + 130, y + rowH * 0.64);
+    if (p.deck) { c.fillStyle = MU; c.font = '500 28px Figtree'; c.textAlign = 'right'; c.fillText(wrapLines(c, p.deck, inner * 0.38, 1)[0], pad + inner - 28, y + rowH * 0.62); c.textAlign = 'left'; }
+    y += rowH + gap;
+  });
+  y += tall ? 60 : square ? 18 : 34;
+  // números da noite
+  const stats = [['JOGADORES', String(e.players.filter(p => !p.espera).length)], ['RODADAS', String(e.rounds.length)]];
+  const top = e.emblemas ? elixirTop(e) : [];
+  if (top.length) stats.push(['COPO SEM FUNDO', `${top[0].p.nome} · ${dosesTxt(top[0].n)}`]);
+  else stats.push(['FORMATO', e.formatoNome || '']);
+  const colW = (inner - 40) / 3;
+  if (y + 90 < footY - 20) stats.forEach(([k, v], i) => {
+    const x = pad + i * (colW + 20), wide = i === 2;
+    c.fillStyle = OR; sp('4px'); c.font = '700 20px Figtree'; c.fillText(k, x, y); sp('0px');
+    c.fillStyle = WH; c.font = `600 ${wide ? 30 : 44}px ${wide ? 'Figtree' : 'Fraunces'}`;
+    wrapLines(c, v, wide ? colW + 20 : colW, 2).forEach((l, j) => c.fillText(l, x, y + 50 + j * 36));
+  });
+  return y + 90;
+  };
+  const left = footY - 30 - body(0);
+  if (left > 60) { c.fillStyle = BK; c.fillRect(0, topH, W, footY - topH); body(Math.round(left / 2)); }
+}
 function paintFlyer() {
   const cv = $('#flyer'); const e = ev(); if (!cv || !e) return;
   drawFlyer(cv, e, S.flyerKind || 'post');
+  const rv = $('#result-art'); if (rv) drawResult(rv, e, S.flyerKind || 'post');
 }
 function tabPromo(e) {
   const kind = S.flyerKind || 'post';
@@ -1483,6 +1578,9 @@ function tabPromo(e) {
       <button class="btn primary" data-act="save-flyer">Salvar imagem</button></div></div>
       <div class="flyer-wrap"><canvas id="flyer" width="1080" height="1350" aria-label="Flyer do evento ${esc(e.nome)}"></canvas>
       <p class="small muted" style="margin:0;max-width:44ch">O flyer usa os dados do evento: nome, data, local, formato, inscrição, vagas, premiação e o contato para inscrições. Edite o evento e o flyer se atualiza sozinho. No celular, ao salvar, você pode mandar direto para o WhatsApp.</p></div></div>
+  ${e.rounds.length ? `<div class="panel stack"><div class="spread"><h3 style="margin:0">Arte do resultado</h3><button class="btn primary" data-act="save-result">Salvar imagem</button></div>
+      <div class="flyer-wrap"><canvas id="result-art" width="1080" height="1350" aria-label="Arte do resultado de ${esc(e.nome)}"></canvas>
+      <p class="small muted" style="margin:0;max-width:44ch">Campeão, pódio, deck de cada um${e.emblemas ? ' e quem mais bebeu Elixir' : ''}, no mesmo tamanho escolhido para o flyer. Fica pronta para o Instagram quando o evento termina.</p></div></div>` : ''}
   <div class="grid2">
     <div class="panel stack"><div class="spread"><h3 style="margin:0">Chamada para WhatsApp e Instagram</h3><button class="btn sm primary" data-copy="promo">Copiar texto</button></div>
       <div class="pre" id="copy-promo">${esc(promoText(e))}</div>
@@ -1664,6 +1762,21 @@ document.addEventListener('click', async ev0 => {
     if (await saveFile(blob, filename)) toast('Flyer salvo');
     return;
   }
+  if (act === 'save-result') {
+    const cv = $('#result-art'), e = ev(); if (!cv || !e) return;
+    await drawResult(cv, e, S.flyerKind || 'post');
+    const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+    const filename = 'resultado-' + (e.nome || 'magic-drink').normalize('NFD').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase() + '.png';
+    if (await saveFile(blob, filename)) toast('Arte do resultado salva');
+    return;
+  }
+  if (act === 'fb-send') {
+    const e = ev(), nota = +((document.querySelector('[name=fb-nota]:checked') || {}).value || 0);
+    if (!nota) { toast('Escolha uma nota de 1 a 5.'); return; }
+    if (await saveMyRegEv(e, { avaliacao: { nota, comentario: readStr('fb-coment'), em: Date.now() } })) toast('Obrigado! Sua avaliação foi enviada.');
+    return;
+  }
+  if (act === 'fb-edit') { const e = ev(), x = myRegEv(e) || {}; await saveMyRegEv(e, { avaliacao: Object.assign({}, x.avaliacao, { editando: true }) }); return; }
   if (act === 'checkin-open' || act === 'checkin-close') return mutate(e => { e.checkinAberto = act === 'checkin-open'; });
   if (act === 'drop-absent') { if (!armed(act)) return; return mutate(e => { let n = 0; e.players.forEach(p => { if (!p.dropped && !checkedIn(e, p)) { p.dropped = true; n++; } }); if (!n) return false; }).then(() => toast('Quem não fez check-in saiu dos pareamentos. Dá para reativar na lista.')); }
   if (act === 'checkin') { const e = ev(); if (await saveMyRegEv(e, { checkin: Date.now() })) toast('Check-in feito. Bom jogo!'); return; }
