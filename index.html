@@ -64,8 +64,8 @@ h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.15; }
 .top-in, .wrap { max-width: 1080px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .top-in { display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; padding-block: 8px; }
 .brand { display: block; background: none; border: 0; padding: 0; cursor: pointer; }
-.brand img { height: 112px; width: auto; display: block; }
-@media (max-width: 560px) { .brand img { height: 84px; } }
+.brand img { height: 123px; width: auto; display: block; }
+@media (max-width: 560px) { .brand img { height: 92px; } }
 /* menu em botão flutuante */
 .fab { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 15; width: 60px; height: 60px; border-radius: 50%; border: 2px solid #111111; background: var(--brand); color: #111111; display: grid; place-items: center; cursor: pointer; box-shadow: 0 6px 18px rgba(0, 0, 0, .55); }
 .fab svg { width: 28px; height: 28px; }
@@ -77,7 +77,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.15; }
 .fab-menu button[aria-current="true"] { background: var(--brand); color: #111111; }
 #app { padding-bottom: 96px; }
 body.tv .fab, body.tv .fab-menu { display: none; }
-@media (max-width: 560px) { .brand img { height: 84px; } }
+@media (max-width: 560px) { .brand img { height: 92px; } }
 .top :focus-visible { outline-color: #111111; }
 .top-text { flex: 1 1 0; min-width: 0; display: grid; gap: 6px; }
 .top-sub { margin: 0; color: #111111; font-weight: 500; font-size: clamp(13px, 1.6vw, 17px); line-height: 1.4; max-width: 62ch; }
