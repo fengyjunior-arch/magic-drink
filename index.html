@@ -693,6 +693,18 @@ function roundAlerts() {
 const canNotify = () => 'Notification' in window && Notification.permission === 'default';
 const notifyBtn = e => myPlayer(e) && e.status !== 'encerrado' && canNotify() ? '<button class="btn sm" data-act="notify-on">Avisar no celular quando sair minha mesa</button>' : '';
 
+// nomes de deck já usados: sugestões na inscrição e grafia padrão (decks de eventos passados ou com decks públicos)
+function deckNames() {
+  const cnt = {};
+  Object.values(S.events).filter(e => S.admin || e.status === 'encerrado' || e.mostrarDecks).forEach(e => e.players.forEach(p => {
+    const k = nameKey(p.deck); if (!k) return;
+    const c = cnt[k] = cnt[k] || { n: 0, forms: {} }; c.n++; const f = p.deck.trim(); c.forms[f] = (c.forms[f] || 0) + 1;
+  }));
+  return Object.values(cnt).sort((a, b) => b.n - a.n).map(c => Object.entries(c.forms).sort((a, b) => b[1] - a[1])[0][0]);
+}
+function canonDeck(v) { v = String(v || '').trim(); const k = nameKey(v); return deckNames().find(n => nameKey(n) === k) || v; }
+const deckDatalist = () => `<datalist id="deck-names">${deckNames().slice(0, 200).map(n => `<option value="${esc(n)}">`).join('')}</datalist>`;
+
 // ---------- relatório do meta ----------
 function metaRows(fmt) {
   const rows = {};
@@ -852,7 +864,7 @@ function tabInfo(e) {
     else if (S.canWrite && S.uid) signup = `<form class="form" id="signup">
         <label class="f">Seu nome ou apelido<input type="text" id="su-nome" required maxlength="60" value="${esc(S.myReg && S.myReg.nome || '')}"></label>
         <label class="f">WhatsApp ou Instagram<input type="text" id="su-contato" maxlength="80" value="${esc(S.myReg && S.myReg.contato || '')}"></label>
-        <label class="f wide">${E.isMulti(e) ? 'Comandante / deck' : 'Deck que vai jogar'} (opcional)<input type="text" id="su-deck" maxlength="80"></label>
+        <label class="f wide">${E.isMulti(e) ? 'Comandante / deck' : 'Deck que vai jogar'} (opcional)<input type="text" id="su-deck" maxlength="80" list="deck-names" autocomplete="off">${deckDatalist()}<span class="small muted" style="font-weight:400">Comece a digitar para ver os nomes já usados por outros jogadores.</span></label>
         ${listFields(e, null)}
         ${max && n >= max ? '<p class="small wide" style="margin:0;color:var(--brand)">As vagas acabaram. Sua inscrição entra na lista de espera.</p>' : ''}
         <div class="wide"><button class="btn primary" type="submit">Quero participar</button> <span class="small muted">Só a organização vê seu contato.</span></div>
@@ -943,7 +955,7 @@ function myTableCard(e, me) {
 function tabPlayers(e) {
   const pend = S.admin ? pendingFor(e) : [];
   const started = e.rounds.length > 0;
-  let h = '';
+  let h = S.admin ? deckDatalist() : '';
   if (S.admin) {
     h += `<div class="grid2">
       <div class="panel stack"><h3 style="margin:0">Adicionar jogadores</h3>
@@ -968,7 +980,7 @@ function tabPlayers(e) {
   h += `<div class="panel" style="padding:0"><div class="spread" style="padding:14px 16px"><h3 style="margin:0">Lista de jogadores</h3>${S.admin && +e.taxa ? `<span class="chip gold num">${paid} de ${e.players.length} pagos</span>` : ''}</div><div class="tbl-wrap"><table>
     <thead><tr><th>#</th><th>Jogador</th>${showDeck ? '<th>Deck</th>' : ''}${showList ? '<th>Lista</th>' : ''}${draft ? '<th>Mesa de draft</th>' : ''}${showCheck ? '<th>Check-in</th>' : ''}${S.admin ? '<th>Pago</th><th>Situação</th><th></th>' : ''}</tr></thead><tbody>
     ${e.players.map((p, i) => `<tr class="${myPlayer(e) && myPlayer(e).id === p.id ? 'me' : ''}"><td class="num muted">${i + 1}</td><td>${S.admin ? `<input type="text" id="pn-${p.id}" data-pname="${p.id}" value="${esc(p.nome)}" maxlength="60" aria-label="Nome" style="min-width:140px">` : `<b>${esc(p.nome)}</b>`}${p.dropped ? ' <span class="chip">desistiu</span>' : ''}${p.espera && !p.dropped ? ` <span class="chip gold">lista de espera ${waitList(e).indexOf(p) + 1}º</span>` : ''}</td>
-      ${showDeck ? (S.admin ? `<td><input type="text" id="pd-${p.id}" data-pdeck="${p.id}" value="${esc(p.deck || '')}" maxlength="80" aria-label="Deck" style="min-width:140px"></td>` : `<td class="muted">${esc(p.deck || '')}</td>`) : ''}${showList ? `<td>${listCell(e, p)}</td>` : ''}${draft ? `<td class="num">${p.pod ? `Mesa ${p.pod} · assento ${p.assento}` : '—'}</td>` : ''}
+      ${showDeck ? (S.admin ? `<td><input type="text" id="pd-${p.id}" data-pdeck="${p.id}" value="${esc(p.deck || '')}" maxlength="80" list="deck-names" autocomplete="off" aria-label="Deck" style="min-width:140px"></td>` : `<td class="muted">${esc(p.deck || '')}</td>`) : ''}${showList ? `<td>${listCell(e, p)}</td>` : ''}${draft ? `<td class="num">${p.pod ? `Mesa ${p.pod} · assento ${p.assento}` : '—'}</td>` : ''}
       ${showCheck ? `<td><label class="check"><input type="checkbox" data-checkin="${p.id}" ${checkedIn(e, p) ? 'checked' : ''}> <span class="sr">${checkedIn(e, p) ? 'Sim' : 'Não'}</span></label></td>` : ''}
       ${S.admin ? `<td><label class="check"><input type="checkbox" data-paid="${p.id}" ${p.pago ? 'checked' : ''}> <span class="sr">${p.pago ? 'Sim' : 'Não'}</span></label>${!p.pago && payInformed(e, p) ? ' <span class="chip gold">informou</span>' : ''}</td>
       <td><button class="btn sm" data-drop="${p.id}">${p.dropped ? 'Reativar' : 'Desistência'}</button></td>
@@ -1788,7 +1800,7 @@ document.addEventListener('change', ev0 => {
     return S.db.doc('events/' + S.eventId + '/media/' + id).update({ legenda: t.value.trim() }).then(() => toast('Legenda salva'), () => toast('Não foi possível salvar a legenda.'));
   }
   if (t.dataset.pname || t.dataset.pdeck) {
-    const id = t.dataset.pname || t.dataset.pdeck, v = t.value.trim();
+    const id = t.dataset.pname || t.dataset.pdeck, v = t.dataset.pdeck ? canonDeck(t.value) : t.value.trim();
     if (t.dataset.pname && !v) { toast('O nome não pode ficar vazio.'); return; }
     return mutate(e => { const p = e.players.find(x => x.id === id); if (t.dataset.pname) p.nome = v; else p.deck = v; }).then(() => toast('Jogador atualizado'));
   }
@@ -1830,7 +1842,7 @@ document.addEventListener('submit', async ev0 => {
     const nome = readStr('su-nome'); if (!nome) return;
     const lst = readList(ev()); if (!lst) return;
     const r = clone(S.myReg || { eventos: {} }); r.nome = nome; r.contato = readStr('su-contato'); r.eventos = r.eventos || {};
-    r.eventos[S.eventId] = Object.assign({}, r.eventos[S.eventId], { deck: readStr('su-deck'), em: Date.now() }, lst);
+    r.eventos[S.eventId] = Object.assign({}, r.eventos[S.eventId], { deck: canonDeck(readStr('su-deck')), em: Date.now() }, lst);
     S.myReg = r; document.activeElement && document.activeElement.blur(); render();
     try { await store.save('regs', S.uid, r); toast('Inscrição enviada. A organização vai confirmar.'); } catch (e) {}
     return;

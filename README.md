@@ -46,6 +46,7 @@ Abra o site, clique em **Organizador** e entre com o e-mail e a senha do passo 1
 - **Elixir pela organização**: na aba Rodadas, abra "Elixir" embaixo de cada mesa para marcar ou corrigir as habilidades de cada jogador. A marcação da organização vale mais que a do jogador.
 - **Aviso de nova rodada**: quem está inscrito e com o site aberto recebe um aviso (e o celular vibra) quando sai a mesa dele. O botão "Avisar no celular quando sair minha mesa" libera as notificações.
 - **Relatório do meta**: no menu, "Meta" mostra os decks e comandantes mais jogados, com títulos e aproveitamento, somando todos os eventos. Para o público, entram só os eventos com "Mostrar os decks" ligado.
+- **Nome do deck**: ao digitar o deck na inscrição (ou na aba Jogadores), o site sugere os nomes já usados, e um nome igual com outra grafia é salvo do jeito padrão. Assim o relatório do meta não separa o mesmo deck.
 - **Agenda**: na página do evento, "Salvar na agenda do celular" baixa um arquivo .ics e "Google Agenda" abre o evento já preenchido.
 - **Conquistas e confrontos**: o perfil do jogador mostra selos como Campeão, Pódio, Invicto, Veterano e Copo sem fundo, e o placar contra cada adversário, com o freguês e o carrasco.
 
