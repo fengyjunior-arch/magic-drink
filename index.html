@@ -8,7 +8,13 @@
 <meta property="og:description" content="Torneios de Magic: The Gathering. Veja os eventos e faça sua inscrição.">
 <meta property="og:image" content="logo-laranja.png">
 <meta name="theme-color" content="#f6b210">
-<link rel="icon" href="logo-laranja.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Magic Drink">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <title>Magic Drink</title>
 <style>html,body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
 
@@ -292,6 +298,7 @@ const S = {
   mode: 'loading', db: null, user: null, uid: null, admin: false, canWrite: false,
   events: {}, formats: {}, regs: {}, myReg: null,
   view: 'home', eventId: null, tab: 'info', formatId: null, newEvent: false,
+  installHidden: (() => { try { return sessionStorage.getItem('md-install-hide') === '1'; } catch (e) { return false; } })(),
   armed: null, pendingRender: false, assets: null, media: [], mediaSub: null, lightbox: null, uploading: '',
 };
 
@@ -605,6 +612,7 @@ function viewHome() {
       <div class="row">${statusChip(next.status)}<span class="chip">${esc(next.formatoNome || '')}</span></div>
       <div><button class="btn primary sm" data-open="${next.id}">Ver evento</button></div>` : `<div class="eyebrow">Próximo evento</div><div class="muted">Nenhum evento publicado ainda.</div>`}
     </div></section>`;
+  h += installBanner();
   h += `<section class="stack"><div class="spread"><h2 class="display" style="font-size:22px">Próximos eventos</h2></div>`;
   h += upcoming.length ? `<div class="grid3">${upcoming.map(evCard).join('')}</div>`
     : `<div class="empty">${S.admin ? 'Nenhum evento publicado. Crie um evento em Organizar e mude o status para "Inscrições abertas" para ele aparecer aqui.' : 'Nenhum evento aberto no momento. Volte em breve.'}</div>`;
@@ -612,6 +620,23 @@ function viewHome() {
   if (past.length) h += `<section class="stack"><h2 class="display" style="font-size:22px">Eventos anteriores</h2><div class="grid3">${past.map(evCard).join('')}</div></section>`;
   return h;
 }
+// ---------- instalar como app ----------
+let installPrompt = null;
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function installBanner() {
+  if (isStandalone() || S.installHidden || S.mode !== 'db') return '';
+  let how;
+  if (installPrompt) how = '<button class="btn primary sm" data-act="install">Instalar</button>';
+  else if (isIOS()) how = '<span class="small">No Safari, toque em <b>Compartilhar</b> e depois em <b>Adicionar à Tela de Início</b>.</span>';
+  else return '';
+  return `<div class="panel spread"><div class="row" style="flex-wrap:nowrap"><img src="icons/icon-192.png" alt="" width="44" height="44" style="border-radius:10px"><div class="stack" style="gap:2px"><b>Instale o app Magic Drink</b><span class="small muted">Fica na tela do celular e abre direto, em tela cheia.</span></div></div>
+    <div class="row">${how}<button class="btn sm" data-act="install-hide">Agora não</button></div></div>`;
+}
+window.addEventListener('beforeinstallprompt', ev0 => { ev0.preventDefault(); installPrompt = ev0; render(); });
+window.addEventListener('appinstalled', () => { installPrompt = null; render(); });
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
+
 function evCard(e) {
   const n = seatCount(e), max = +e.vagas || 0;
   return `<button class="evcard" data-open="${e.id}">
@@ -1382,6 +1407,8 @@ document.addEventListener('click', async ev0 => {
     const [, rn, mid] = act.split(':');
     return mutate(e => { const r = e.rounds.find(x => x.n === +rn), m = r && r.matches.find(x => x.id === mid); const v = m && agreedReport(e, r, m); if (!v) return false; m.result = parseResult(v); }).then(() => toast('Resultado confirmado'));
   }
+  if (act === 'install') { if (!installPrompt) return; installPrompt.prompt(); try { await installPrompt.userChoice; } catch (err) {} installPrompt = null; render(); return; }
+  if (act === 'install-hide') { S.installHidden = true; try { sessionStorage.setItem('md-install-hide', '1'); } catch (err) {} render(); return; }
   if (act === 'backup') {
     const data = { app: 'magic-drink', versao: 1, exportadoEm: new Date().toISOString(), events: S.events, formats: S.formats, regs: S.regs, media: {} };
     if (S.mode === 'db') for (const id of Object.keys(S.events)) {

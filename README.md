@@ -43,6 +43,10 @@ Abra o site, clique em **Organizador** e entre com o e-mail e a senha do passo 1
 - **Perfil do jogador**: no Ranking, toque no nome do jogador para ver o histórico dele.
 - **Lista de espera**: quando as vagas acabam, quem entra fica na lista de espera e fora dos pareamentos. Se alguém desistir antes da 1ª rodada, o primeiro da fila entra sozinho.
 
+## Instalar como app
+
+O site pode ser instalado no celular e abre em tela cheia, com o ícone do Magic Drink. No Android (Chrome), aparece o botão **Instalar** na página inicial. No iPhone, abra o site no Safari, toque em **Compartilhar** e depois em **Adicionar à Tela de Início**. O app sempre busca a versão mais nova do site. Sem internet, ele abre a última versão guardada.
+
 ## Cópia de segurança
 
 Em **Organizar**, **Baixar cópia** salva todos os eventos, formatos, inscrições e a lista de fotos e vídeos num arquivo `.json`. **Restaurar cópia** devolve esses dados ao site: substitui os itens com o mesmo nome e não apaga o que não está na cópia. Os arquivos de foto e vídeo ficam no Supabase e não vão para a cópia.
@@ -52,6 +56,7 @@ Em **Organizar**, **Baixar cópia** salva todos os eventos, formatos, inscriçõ
 | Arquivo | O que faz |
 | --- | --- |
 | `index.html` | O app inteiro: telas, estilos e lógica da interface |
+| `manifest.webmanifest`, `sw.js`, `icons/` | Deixam o site ser instalado como app no celular |
 | `qrcode.js` | Gerador de QR code (biblioteca qrcode-generator, licença MIT) |
 | `engine.js` | Pareamentos e chaves: suíço, eliminatória simples e dupla, todos contra todos, pods de Commander e de draft, classificação com desempates |
 | `backend.js` | Ligação com o Supabase: dados, login, fotos e vídeos, e salvar o flyer |
