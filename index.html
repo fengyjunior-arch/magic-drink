@@ -370,7 +370,7 @@ function viewLogin() {
       <label class="f">E-mail<input type="text" id="lg-email" autocomplete="username" inputmode="email" required></label>
       <label class="f">Senha<input type="password" id="lg-senha" autocomplete="current-password" required style="width:100%;background:var(--field-bg);border:1px solid var(--field-line);border-radius:8px;padding:8px 10px;color:var(--field-ink)"></label>
       <div><button class="btn primary" type="submit">Entrar</button></div>
-    </form>
+    </form>${S.loginMsg ? `<p class="small" style="margin:0;color:var(--brand)">${esc(S.loginMsg)}</p>` : ''}
     <p class="small muted" style="margin:0">Jogadores não precisam entrar. A inscrição é feita direto na página do evento.</p></div>`;
 }
 
@@ -1103,8 +1103,15 @@ document.addEventListener('submit', async ev0 => {
   ev0.preventDefault();
   const f = ev0.target;
   if (f.id === 'login-form') {
-    try { await window.MD_AUTH.signIn(readStr('lg-email'), $('#lg-senha').value); location.reload(); }
-    catch (err) { toast('E-mail ou senha incorretos.'); }
+    let r;
+    try { r = await window.MD_AUTH.signIn(readStr('lg-email'), $('#lg-senha').value); }
+    catch (err) { S.loginMsg = /confirm/i.test(err && err.message || '') ? 'Este e-mail ainda não foi confirmado no Supabase.' : 'E-mail ou senha incorretos.'; render(); return; }
+    if (r && r.admin) { location.reload(); return; }
+    S.loginMsg = r && r.error
+      ? 'Login feito, mas o site não conseguiu verificar a permissão de organizador (' + r.error + '). Confira se o setup.sql rodou até o fim.'
+      : 'Login feito como ' + (r && r.email || 'este e-mail') + ', mas ele não está na lista de organizadores. Rode no SQL Editor o comando que adiciona o e-mail na tabela admins.';
+    try { await window.MD_AUTH.signOut(); } catch (err) {}
+    render();
     return;
   }
   if (f.id === 'signup') {

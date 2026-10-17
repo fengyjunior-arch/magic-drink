@@ -140,8 +140,11 @@
   window.MD_BLOB_URL = blobUrl;
   window.MD_AUTH = {
     async signIn(email, password) {
-      const { error } = await sb.auth.signInWithPassword({ email, password });
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
       if (error) throw error;
+      // confere na hora se este usuário está na tabela admins, para o site poder explicar o problema
+      const r = await sb.rpc('is_admin');
+      return { email: data.user && data.user.email, admin: !!r.data, error: r.error ? r.error.message : null };
     },
     async signOut() { await sb.auth.signOut(); },
   };
