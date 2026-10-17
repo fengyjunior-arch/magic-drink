@@ -618,6 +618,7 @@ function viewPerfil() {
   return `${back}<div><div class="eyebrow">Jogador · ${pos + 1}º no ranking</div><h1 class="display" style="font-size:30px">${esc(row.nome)}</h1></div>
     <div class="row"><span class="chip gold num">${row.pts} pontos</span><span class="chip num">${row.ev} ${row.ev === 1 ? 'evento' : 'eventos'}</span><span class="chip num">${row.w}-${row.l}-${row.d}</span>${row.titulos ? `<span class="chip open num">${row.titulos} ${row.titulos === 1 ? 'título' : 'títulos'}</span>` : ''}</div>
     <div class="panel stack"><h3 style="margin:0">Conquistas</h3>${badges.length ? `<div class="badges">${badges.map(([n, d]) => `<div class="badge"><b>${n}</b><span class="small muted">${d}</span></div>`).join('')}</div>` : '<p class="muted" style="margin:0">Nenhuma conquista ainda. Jogue mais um Magic Drink!</p>'}</div>
+    ${confrontosPanel(key, row.nome)}
     <div class="panel" style="padding:0"><div class="tbl-wrap"><table>
     <thead><tr><th>Data</th><th>Evento</th><th>Formato</th>${showDeck ? '<th>Deck</th>' : ''}<th class="r">Colocação</th><th class="r">V-D-E</th><th class="r">Pontos</th></tr></thead>
     <tbody>${hist.map(({ e, t, pl }) => `<tr><td class="num">${e.data ? e.data.split('-').reverse().join('/') : '—'}</td><td><a href="#" data-open="${e.id}"><b>${esc(e.nome)}</b></a></td><td>${esc(e.formatoNome)}</td>${showDeck ? `<td class="muted">${S.admin || e.mostrarDecks ? esc(t.p.deck || '') : ''}</td>` : ''}<td class="r num">${pl === 1 ? '<span class="chip gold">Campeão</span>' : pl ? pl + 'º' : '—'}</td><td class="r num">${t.w}-${t.l}-${t.d}</td><td class="r num"><b>${t.mp}</b></td></tr>`).join('')}</tbody></table></div></div>`;
@@ -627,6 +628,32 @@ function elixirByName() {
   const out = {};
   rankedEvents().forEach(e => e.players.forEach(p => { const n = elixirOf(e, p), k = nameKey(p.nome); if (n && k) out[k] = (out[k] || 0) + n; }));
   return out;
+}
+// confrontos diretos: vitórias, derrotas e empates contra cada adversário em todos os eventos
+function confrontos(key) {
+  const opp = {};
+  rankedEvents().forEach(e => e.rounds.forEach(r => r.matches.forEach(m => {
+    if (m.bye || m.wait || !m.result || m.players.length < 2) return;
+    const me = m.players.find(id => nameKey(pname(e, id)) === key); if (!me) return;
+    const w = E.winnerOf(m);
+    m.players.filter(id => id !== me).forEach(id => {
+      const nome = pname(e, id), k = nameKey(nome); if (!k || k === key) return;
+      const o = opp[k] = opp[k] || { key: k, nome, w: 0, l: 0, d: 0 };
+      if (!w) o.d++; else if (w === me) o.w++; else if (w === id || m.players.length === 2) o.l++;
+    });
+  })));
+  return Object.values(opp).filter(o => o.w + o.l + o.d).sort((a, b) => (b.w + b.l + b.d) - (a.w + a.l + a.d) || (b.w - b.l) - (a.w - a.l) || a.nome.localeCompare(b.nome));
+}
+function confrontosPanel(key, nome) {
+  const list = confrontos(key); if (!list.length) return '';
+  const ranked = new Set(rankingTable().map(r => r.key));
+  const fregues = list.filter(o => o.w >= 2 && o.w > o.l).sort((a, b) => (b.w - b.l) - (a.w - a.l))[0];
+  const carrasco = list.filter(o => o.l >= 2 && o.l > o.w).sort((a, b) => (b.l - b.w) - (a.l - a.w))[0];
+  const tag = o => o === fregues ? ' <span class="chip open">Freguês</span>' : o === carrasco ? ' <span class="chip bad">Carrasco</span>' : '';
+  return `<div class="panel" style="padding:0"><div style="padding:14px 16px" class="stack"><h3 style="margin:0">Confrontos</h3><span class="small muted">Partidas de ${esc(nome)} contra cada adversário, em todos os eventos.</span></div><div class="tbl-wrap"><table>
+    <thead><tr><th>Adversário</th><th class="r">Placar</th><th class="r">V-D-E</th><th class="r">Partidas</th></tr></thead>
+    <tbody>${list.map(o => `<tr><td>${ranked.has(o.key) ? `<a href="#" data-perfil="${esc(o.key)}"><b>${esc(o.nome)}</b></a>` : `<b>${esc(o.nome)}</b>`}${tag(o)}</td><td class="r num"><b>${o.w} x ${o.l}</b></td><td class="r num">${o.w}-${o.l}-${o.d}</td><td class="r num">${o.w + o.l + o.d}</td></tr>`).join('')}</tbody></table></div>
+    ${fregues || carrasco ? `<div class="small muted" style="padding:10px 16px">${fregues ? `Freguês: ${esc(fregues.nome)} (${fregues.w} x ${fregues.l}).` : ''}${fregues && carrasco ? ' ' : ''}${carrasco ? `Carrasco: ${esc(carrasco.nome)} (${carrasco.w} x ${carrasco.l}).` : ''}</div>` : ''}</div>`;
 }
 function conquistas(key, row, hist) {
   const out = [];
