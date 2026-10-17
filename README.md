@@ -37,7 +37,7 @@ Abra o site, clique em **Organizador** e entre com o e-mail e a senha do passo 1
 - **Resultados**: cada jogador informa o resultado da própria mesa pelo celular. Quando os dois lados informam o mesmo resultado (ou só um informou), aparece o botão para confirmar. Se informarem resultados diferentes, a mesa fica marcada para você decidir.
 - **Pix**: preencha a chave Pix no evento. O jogador inscrito vê o QR code com o valor da inscrição e avisa quando pagou; você confirma na coluna Pago.
 - **Lista do deck**: em Configurar, marque "Pedir a lista do deck" e, para Duel Commander 500, o valor máximo. A inscrição pede a lista e o valor total pela LigaMagic e recusa valores acima do limite.
-- **Ranking**: soma os pontos de todos os eventos da temporada (por padrão, o ano do evento). Cada evento pode ficar fora do ranking em Configurar.
+- **Ranking**: soma os pontos de todos os eventos já realizados. Cada evento pode ficar fora do ranking em Configurar.
 
 ## Arquivos
 
