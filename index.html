@@ -107,6 +107,21 @@ h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.15; }
 .chip.draft { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
 .chip.gold { background: var(--gold-soft); color: var(--gold); border-color: transparent; }
 .chip.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+body.tv .top { display: none; }
+body.tv #app { max-width: none; padding: 20px clamp(16px, 2.5vw, 40px); }
+.tv-head { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.tv-head img { height: clamp(60px, 9vw, 120px); width: auto; }
+.tv-head h1 { font-size: clamp(26px, 3.6vw, 56px); margin: 0; line-height: 1.05; }
+.tv-head .clock { font-size: clamp(40px, 6vw, 96px); }
+.tv-grid { display: grid; gap: 20px; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); align-items: start; }
+@media (max-width: 900px) { .tv-grid { grid-template-columns: minmax(0, 1fr); } }
+.tv-matches { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.tv-m { background: var(--surface); border: 1px solid #2a2a2a; border-left: 6px solid var(--brand); border-radius: 12px; padding: 12px 16px; display: grid; gap: 4px; font-size: clamp(16px, 1.4vw, 24px); }
+.tv-m b.mesa { color: var(--brand); font-size: .8em; text-transform: uppercase; letter-spacing: .06em; }
+.tv-m.done { opacity: .55; border-left-color: #2a2a2a; }
+.tv-st { font-size: clamp(15px, 1.2vw, 22px); }
+.tv-exit { position: fixed; right: 12px; bottom: 12px; opacity: .35; }
+.tv-exit:hover { opacity: 1; }
 .qr { background: #ffffff; padding: 8px; border-radius: 10px; width: 210px; max-width: 100%; }
 .qr svg { display: block; width: 100%; height: auto; }
 .qr-box { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
@@ -392,6 +407,35 @@ function qrSvg(text) {
   return `<div class="qr">${q.createSvgTag({ cellSize: 4, margin: 2, scalable: true })}</div>`;
 }
 const eventLink = (e, kind = 'evento') => location.origin + location.pathname + '#' + kind + '/' + e.id;
+// lista de espera: quem entra depois de esgotar as vagas fica de fora dos pareamentos até subir
+const seatCount = e => e.players.filter(p => !p.dropped && !p.espera).length;
+const waitList = e => e.players.filter(p => p.espera && !p.dropped);
+function addPlayer(e, p) { if (+e.vagas && !e.rounds.length && seatCount(e) >= +e.vagas) p.espera = true; e.players.push(p); return p; }
+function fillWaitlist(e) {
+  const up = [];
+  if (e.rounds.length || !+e.vagas) return up;
+  for (const p of e.players) { if (seatCount(e) >= +e.vagas) break; if (p.espera && !p.dropped) { delete p.espera; up.push(p.nome); } }
+  return up;
+}
+// salvar arquivos (flyer, cópia de segurança)
+async function saveFile(blob, filename) {
+  if (S.downloads) { try { const r = await S.downloads.save({ filename, data: blob }); return r && r.status === 'saved'; } catch (err) { if (err && err.code === 'cancelled') return false; } }
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+  return true;
+}
+// mensagem das mesas para o grupo do WhatsApp
+function roundText(e, r) {
+  const names = m => m.players.map(id => pname(e, id));
+  const out = [`*MAGIC DRINK · ${e.nome.toUpperCase()}*`, `*${roundTitle(e, r)}*${e.minutos ? ` · ${e.minutos} min` : ''}`, ''];
+  r.matches.slice().sort((a, b) => (a.bye || a.wait) - (b.bye || b.wait) || (a.mesa || 0) - (b.mesa || 0)).forEach(m => {
+    if (m.bye) out.push(`Bye: ${names(m)[0]}`);
+    else if (m.wait) out.push(`Aguardando: ${names(m).join(', ')}`);
+    else out.push(`Mesa ${m.mesa}: ${names(m).join(m.players.length > 2 ? ', ' : ' x ')}`);
+  });
+  if (window.MD_CONFIG && window.MD_CONFIG.supabaseUrl) out.push('', `Acompanhe ao vivo: ${eventLink(e)}`);
+  return out.join('\n');
+}
 // ranking geral (todos os eventos realizados)
 const nameKey = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/\s+/g, ' ');
 const rankedEvents = () => sortedEvents().filter(e => e.status !== 'rascunho' && !e.foraRanking && e.rounds.length);
@@ -400,19 +444,28 @@ function eventWinner(e) {
   if (e.status !== 'encerrado' || isElim(e) || e.cutSeeds) return null;
   const st = E.standings(e, 'main'); return st[0] ? st[0].p.id : null;
 }
+// pontos de cada jogador em um evento, somando todas as fases
+function eventTotals(e) {
+  const tot = {};
+  ['main', 'elim', 'final'].forEach(st => {
+    if (!E.stageRounds(e, st).length) return;
+    E.standings(e, st).forEach(s => { const t = tot[s.p.id] = tot[s.p.id] || { p: s.p, mp: 0, w: 0, l: 0, d: 0 }; t.mp += s.mp; t.w += s.w; t.l += s.l; t.d += s.d; });
+  });
+  return Object.values(tot).filter(t => t.w || t.l || t.d);
+}
+function placement(e, id) {
+  if (eventWinner(e) === id) return 1;
+  if (isElim(e)) return null;
+  const st = E.standings(e, 'main').filter(s => !s.p.espera), i = st.findIndex(s => s.p.id === id);
+  return i < 0 ? null : i + 1;
+}
 function rankingTable() {
   const rows = {};
   rankedEvents().forEach(e => {
-    const tot = {};
-    ['main', 'elim', 'final'].forEach(st => {
-      if (!E.stageRounds(e, st).length) return;
-      E.standings(e, st).forEach(s => { const t = tot[s.p.id] = tot[s.p.id] || { p: s.p, mp: 0, w: 0, l: 0, d: 0 }; t.mp += s.mp; t.w += s.w; t.l += s.l; t.d += s.d; });
-    });
     const win = eventWinner(e);
-    Object.values(tot).forEach(t => {
-      if (!t.w && !t.l && !t.d) return;
+    eventTotals(e).forEach(t => {
       const k = nameKey(t.p.nome); if (!k) return;
-      const row = rows[k] = rows[k] || { nome: t.p.nome, pts: 0, ev: 0, w: 0, l: 0, d: 0, titulos: 0 };
+      const row = rows[k] = rows[k] || { key: k, nome: t.p.nome, pts: 0, ev: 0, w: 0, l: 0, d: 0, titulos: 0 };
       row.pts += t.mp; row.ev++; row.w += t.w; row.l += t.l; row.d += t.d; if (win === t.p.id) row.titulos++;
     });
   });
@@ -422,7 +475,9 @@ function rankingTable() {
 async function saveEvent(e) { S.events[e.id] = e; render(); await store.save('events', e.id, e); }
 async function mutate(fn) {
   const e = clone(ev()); try { const r = fn(e); if (r === false) return; } catch (err) { toast(err.message); return; }
+  const up = fillWaitlist(e);
   await saveEvent(e);
+  if (up.length) setTimeout(() => toast(`Saiu da lista de espera: ${up.join(', ')}`), 1200);
 }
 
 // botões de duas etapas (confirm() não existe no visualizador)
@@ -434,17 +489,20 @@ function render() {
   const a = document.activeElement;
   if (a && a.closest && a.closest('#app') && a.matches('input[type=text],input[type=number],input[type=date],input[type=time],textarea')) { S.pendingRender = true; return; }
   S.pendingRender = false;
+  document.body.classList.toggle('tv', S.view === 'telao');
   renderNav();
   const app = $('#app');
   let html = '';
   if (S.mode === 'loading') html = '<div class="empty">Carregando…</div>';
   else {
-    if (S.mode === 'local') html += `<div class="banner">Modo local: os dados ficam só neste navegador. ${window.MD_CONFIG ? 'Configure o Supabase no arquivo config.js para salvar e compartilhar com a comunidade.' : 'Abra o app pelo link do claude.ai para salvar e compartilhar com a comunidade.'}</div>`;
+    if (S.mode === 'local' && S.view !== 'telao') html += `<div class="banner">Modo local: os dados ficam só neste navegador. ${window.MD_CONFIG ? 'Configure o Supabase no arquivo config.js para salvar e compartilhar com a comunidade.' : 'Abra o app pelo link do claude.ai para salvar e compartilhar com a comunidade.'}</div>`;
     if (S.view === 'event' && ev()) html += viewEvent();
     else if (S.view === 'admin' && S.admin) html += viewAdmin();
     else if (S.view === 'formats' && S.admin) html += viewFormats();
     else if (S.view === 'login' && window.MD_AUTH) html += viewLogin();
     else if (S.view === 'ranking') html += viewRanking();
+    else if (S.view === 'perfil') html += viewPerfil();
+    else if (S.view === 'telao') html += viewTelao();
     else html += viewHome();
   }
   app.innerHTML = html;
@@ -480,9 +538,50 @@ function viewRanking() {
   const rows = rankingTable();
   h += `<div class="panel" style="padding:0"><div class="tbl-wrap"><table>
     <thead><tr><th>#</th><th>Jogador</th><th class="r">Pontos</th><th class="r">Eventos</th><th class="r">V-D-E</th><th class="r">Títulos</th></tr></thead>
-    <tbody>${rows.map((r, i) => `<tr><td class="num">${i < 3 ? `<span class="chip gold">${i + 1}º</span>` : i + 1}</td><td><b>${esc(r.nome)}</b></td><td class="r num"><b>${r.pts}</b></td><td class="r num">${r.ev}</td><td class="r num">${r.w}-${r.l}-${r.d}</td><td class="r num">${r.titulos || ''}</td></tr>`).join('')}</tbody></table></div></div>
+    <tbody>${rows.map((r, i) => `<tr><td class="num">${i < 3 ? `<span class="chip gold">${i + 1}º</span>` : i + 1}</td><td><a href="#" data-perfil="${esc(r.key)}"><b>${esc(r.nome)}</b></a></td><td class="r num"><b>${r.pts}</b></td><td class="r num">${r.ev}</td><td class="r num">${r.w}-${r.l}-${r.d}</td><td class="r num">${r.titulos || ''}</td></tr>`).join('')}</tbody></table></div></div>
     <p class="small muted" style="margin:0">Soma dos pontos de todas as partidas dos ${evs.length} ${evs.length === 1 ? 'evento realizado' : 'eventos realizados'}, com a pontuação de cada evento, incluindo top e mesa final. Desempate: títulos, vitórias e menos eventos jogados. O jogador é identificado pelo nome, então use sempre o mesmo nome nas inscrições.</p>`;
   return h;
+}
+
+function viewPerfil() {
+  const key = S.perfil, rows = rankingTable(), pos = rows.findIndex(r => r.key === key), row = rows[pos];
+  const back = '<div><button class="btn sm" data-nav="ranking">← Ranking</button></div>';
+  if (!row) return back + '<div class="empty">Jogador não encontrado no ranking.</div>';
+  const hist = [];
+  rankedEvents().forEach(e => eventTotals(e).forEach(t => { if (nameKey(t.p.nome) === key) hist.push({ e, t, pl: placement(e, t.p.id) }); }));
+  hist.reverse();
+  const showDeck = hist.some(h => (S.admin || h.e.mostrarDecks) && h.t.p.deck);
+  return `${back}<div><div class="eyebrow">Jogador · ${pos + 1}º no ranking</div><h1 class="display" style="font-size:30px">${esc(row.nome)}</h1></div>
+    <div class="row"><span class="chip gold num">${row.pts} pontos</span><span class="chip num">${row.ev} ${row.ev === 1 ? 'evento' : 'eventos'}</span><span class="chip num">${row.w}-${row.l}-${row.d}</span>${row.titulos ? `<span class="chip open num">${row.titulos} ${row.titulos === 1 ? 'título' : 'títulos'}</span>` : ''}</div>
+    <div class="panel" style="padding:0"><div class="tbl-wrap"><table>
+    <thead><tr><th>Data</th><th>Evento</th><th>Formato</th>${showDeck ? '<th>Deck</th>' : ''}<th class="r">Colocação</th><th class="r">V-D-E</th><th class="r">Pontos</th></tr></thead>
+    <tbody>${hist.map(({ e, t, pl }) => `<tr><td class="num">${e.data ? e.data.split('-').reverse().join('/') : '—'}</td><td><a href="#" data-open="${e.id}"><b>${esc(e.nome)}</b></a></td><td>${esc(e.formatoNome)}</td>${showDeck ? `<td class="muted">${S.admin || e.mostrarDecks ? esc(t.p.deck || '') : ''}</td>` : ''}<td class="r num">${pl === 1 ? '<span class="chip gold">Campeão</span>' : pl ? pl + 'º' : '—'}</td><td class="r num">${t.w}-${t.l}-${t.d}</td><td class="r num"><b>${t.mp}</b></td></tr>`).join('')}</tbody></table></div></div>`;
+}
+
+// ---------- telão ----------
+function viewTelao() {
+  const e = ev();
+  if (!e) return '<div class="empty">Carregando o evento…</div>';
+  const last = e.rounds[e.rounds.length - 1];
+  const clock = last && last.inicio && e.minutos ? `<span class="clock" data-clock="${last.inicio + e.minutos * 60000}">--:--</span>` : '';
+  const champ = champion(e);
+  let h = `<div class="tv-head"><img src="logo-laranja.png" alt="Magic Drink"><div style="flex:1;min-width:0"><div class="eyebrow">${last ? esc(roundTitle(e, last)) : esc(fmtDate(e.data, e.hora))}</div><h1 class="display">${esc(e.nome)}</h1></div>${clock}</div>`;
+  if (champ) h += `<div class="champ" style="font-size:28px"><span>Campeão</span><b>${esc(pname(e, champ))}</b></div>`;
+  let left;
+  if (!last) {
+    left = e.checkinAberto ? `<div class="panel qr-box">${qrSvg(eventLink(e, 'checkin'))}<div class="stack"><h2 class="display" style="margin:0;font-size:clamp(24px,3vw,44px)">Faça seu check-in</h2><div style="font-size:clamp(16px,1.5vw,24px)">Aponte a câmera do celular para o QR code e toque em "Fazer check-in".</div></div></div>`
+      : `<div class="panel"><div class="display" style="font-size:clamp(24px,3vw,44px)">${seatCount(e)} jogadores inscritos</div><div class="muted">As mesas aparecem aqui quando a primeira rodada começar.</div></div>`;
+  } else {
+    const ms = last.matches.slice().sort((a, b) => (a.bye || a.wait) - (b.bye || b.wait) || (a.mesa || 0) - (b.mesa || 0));
+    left = `<div class="tv-matches">${ms.map(m => `<div class="tv-m ${E.done(m) && !m.bye && !m.wait ? 'done' : ''}"><b class="mesa">${m.bye ? 'Bye' : m.wait ? 'Aguardando' : 'Mesa ' + m.mesa}</b><div>${m.players.map(id => esc(pname(e, id))).join(m.players.length > 2 ? '<br>' : ' <span class="muted">x</span> ')}</div>${m.result ? `<div>${resultLabel(e, m)}</div>` : ''}</div>`).join('')}</div>`;
+  }
+  let right = '';
+  if (e.rounds.length && !isElim(e)) {
+    const st = E.standings(e, 'main').filter(s => !s.p.espera).slice(0, 16);
+    right = `<div class="panel tv-st" style="padding:0"><div style="padding:12px 16px"><h3 style="margin:0">Classificação</h3></div><table><tbody>${st.map((s, i) => `<tr><td class="num">${i + 1}</td><td><b>${esc(s.p.nome)}</b></td><td class="r num"><b>${s.mp}</b></td><td class="r num muted">${s.w}-${s.l}-${s.d}</td></tr>`).join('')}</tbody></table></div>`;
+  }
+  return h + `<div class="tv-grid" style="${right ? '' : 'grid-template-columns:minmax(0,1fr)'}"><div>${left}</div>${right ? `<div>${right}</div>` : ''}</div>
+    <button class="btn sm tv-exit" data-tvexit>Sair do telão</button>`;
 }
 
 // ---------- página pública ----------
@@ -514,7 +613,7 @@ function viewHome() {
   return h;
 }
 function evCard(e) {
-  const n = e.players.length, max = +e.vagas || 0;
+  const n = seatCount(e), max = +e.vagas || 0;
   return `<button class="evcard" data-open="${e.id}">
     <div class="row" style="align-items:flex-start;flex-wrap:nowrap">${dateBox(e.data)}
       <div class="stack" style="gap:4px;min-width:0"><h3>${esc(e.nome)}</h3><div class="muted small">${esc(e.hora || '')}${e.local ? ' · ' + esc(e.local) : ''}</div></div></div>
@@ -560,17 +659,19 @@ function champion(e) {
 }
 
 function tabInfo(e) {
-  const n = e.players.length, max = +e.vagas || 0, me = myPlayer(e);
+  const n = seatCount(e), max = +e.vagas || 0, me = myPlayer(e);
   const myPending = S.myReg && S.myReg.eventos && S.myReg.eventos[e.id] && !me;
   let signup = '';
   if (e.status === 'inscricoes') {
-    if (me) signup = `<div class="chip open">Você está inscrito como ${esc(me.nome)}</div>`;
+    if (me && me.espera) signup = `<div class="chip gold" style="white-space:normal">Você está na lista de espera (${waitList(e).indexOf(me) + 1}º). Se alguém desistir, você entra automaticamente.</div>`;
+    else if (me) signup = `<div class="chip open">Você está inscrito como ${esc(me.nome)}</div>`;
     else if (myPending) signup = `<div class="stack"><div class="chip gold">Inscrição enviada. Aguardando confirmação da organização.</div><div>${armBtn('cancel-reg', 'Cancelar minha inscrição', 'Confirmar cancelamento')}</div></div>`;
     else if (S.canWrite && S.uid) signup = `<form class="form" id="signup">
         <label class="f">Seu nome ou apelido<input type="text" id="su-nome" required maxlength="60" value="${esc(S.myReg && S.myReg.nome || '')}"></label>
         <label class="f">WhatsApp ou Instagram<input type="text" id="su-contato" maxlength="80" value="${esc(S.myReg && S.myReg.contato || '')}"></label>
         <label class="f wide">${E.isMulti(e) ? 'Comandante / deck' : 'Deck que vai jogar'} (opcional)<input type="text" id="su-deck" maxlength="80"></label>
         ${listFields(e, null)}
+        ${max && n >= max ? '<p class="small wide" style="margin:0;color:var(--brand)">As vagas acabaram. Sua inscrição entra na lista de espera.</p>' : ''}
         <div class="wide"><button class="btn primary" type="submit">Quero participar</button> <span class="small muted">Só a organização vê seu contato.</span></div>
       </form>`;
     else signup = `<p class="muted small" style="margin:0">Para se inscrever, fale com a organização${e.contato ? ': <b class="mono">' + esc(e.contato) + '</b>' : ''}.</p>`;
@@ -586,7 +687,7 @@ function tabInfo(e) {
     <div class="stack">
       <div class="panel stack">
         <div class="spread"><span class="eyebrow">Inscrições</span>${statusChip(e.status)}</div>
-        ${max ? `<div class="bar"><i style="width:${Math.min(100, n / max * 100)}%"></i></div><div class="num small">${n} de ${max} vagas${n >= max ? ' · lista de espera' : ''}</div>` : `<div class="num small">${n} inscritos</div>`}
+        ${max ? `<div class="bar"><i style="width:${Math.min(100, n / max * 100)}%"></i></div><div class="num small">${n} de ${max} vagas${waitList(e).length ? ` · ${waitList(e).length} na lista de espera` : n >= max ? ' · vagas esgotadas' : ''}</div>` : `<div class="num small">${n} inscritos</div>`}
         <table><tbody>
           <tr><td class="muted">Inscrição</td><td>${esc(money(e.taxa))}</td></tr>
           <tr><td class="muted">Formato</td><td>${esc(e.formatoNome)}</td></tr>
@@ -664,7 +765,7 @@ function tabPlayers(e) {
         ${pend.length ? `<ul class="list-plain">${pend.map(p => `<li class="spread"><div style="min-width:0"><b>${esc(p.nome)}</b> <span class="muted small">${esc(p.deck || '')}</span><div class="small mono muted">${esc(p.contato || '')}</div>
           ${p.pix ? '<span class="chip gold">informou Pix</span> ' : ''}${evLimit(e) ? valorChip(e, p.valor) : ''}${p.lista ? `<details><summary class="small">ver lista</summary><div class="listbox">${esc(p.lista)}</div></details>` : ''}</div>
           <div class="row"><button class="btn sm primary" data-approve="${p.uid}">Aprovar</button>${armBtn('reject:' + p.uid, 'Recusar', 'Confirmar')}</div></li>`).join('')}</ul>`
-        : '<p class="muted small" style="margin:0">Nenhuma inscrição pendente. Quem tiver acesso de colaborador ao app pode se inscrever pela página do evento.</p>'}
+        : '<p class="muted small" style="margin:0">Nenhuma inscrição pendente. Os jogadores se inscrevem pela página do evento.</p>'}
       </div></div>`;
   }
   if (S.admin) h += checkinAdmin(e);
@@ -676,7 +777,7 @@ function tabPlayers(e) {
   const paid = e.players.filter(p => p.pago).length;
   h += `<div class="panel" style="padding:0"><div class="spread" style="padding:14px 16px"><h3 style="margin:0">Lista de jogadores</h3>${S.admin && +e.taxa ? `<span class="chip gold num">${paid} de ${e.players.length} pagos</span>` : ''}</div><div class="tbl-wrap"><table>
     <thead><tr><th>#</th><th>Jogador</th>${showDeck ? '<th>Deck</th>' : ''}${showList ? '<th>Lista</th>' : ''}${draft ? '<th>Mesa de draft</th>' : ''}${showCheck ? '<th>Check-in</th>' : ''}${S.admin ? '<th>Pago</th><th>Situação</th><th></th>' : ''}</tr></thead><tbody>
-    ${e.players.map((p, i) => `<tr class="${myPlayer(e) && myPlayer(e).id === p.id ? 'me' : ''}"><td class="num muted">${i + 1}</td><td>${S.admin ? `<input type="text" id="pn-${p.id}" data-pname="${p.id}" value="${esc(p.nome)}" maxlength="60" aria-label="Nome" style="min-width:140px">` : `<b>${esc(p.nome)}</b>`}${p.dropped ? ' <span class="chip">desistiu</span>' : ''}</td>
+    ${e.players.map((p, i) => `<tr class="${myPlayer(e) && myPlayer(e).id === p.id ? 'me' : ''}"><td class="num muted">${i + 1}</td><td>${S.admin ? `<input type="text" id="pn-${p.id}" data-pname="${p.id}" value="${esc(p.nome)}" maxlength="60" aria-label="Nome" style="min-width:140px">` : `<b>${esc(p.nome)}</b>`}${p.dropped ? ' <span class="chip">desistiu</span>' : ''}${p.espera && !p.dropped ? ` <span class="chip gold">lista de espera ${waitList(e).indexOf(p) + 1}º</span>` : ''}</td>
       ${showDeck ? (S.admin ? `<td><input type="text" id="pd-${p.id}" data-pdeck="${p.id}" value="${esc(p.deck || '')}" maxlength="80" aria-label="Deck" style="min-width:140px"></td>` : `<td class="muted">${esc(p.deck || '')}</td>`) : ''}${showList ? `<td>${listCell(e, p)}</td>` : ''}${draft ? `<td class="num">${p.pod ? `Mesa ${p.pod} · assento ${p.assento}` : '—'}</td>` : ''}
       ${showCheck ? `<td><label class="check"><input type="checkbox" data-checkin="${p.id}" ${checkedIn(e, p) ? 'checked' : ''}> <span class="sr">${checkedIn(e, p) ? 'Sim' : 'Não'}</span></label></td>` : ''}
       ${S.admin ? `<td><label class="check"><input type="checkbox" data-paid="${p.id}" ${p.pago ? 'checked' : ''}> <span class="sr">${p.pago ? 'Sim' : 'Não'}</span></label>${!p.pago && payInformed(e, p) ? ' <span class="chip gold">informou</span>' : ''}</td>
@@ -761,7 +862,7 @@ function resultInput(e, r, m) {
 }
 function swapSel(e, r, m, i) {
   const cur = m.players[i];
-  return `<select data-swap="${r.n}:${m.id}:${i}" aria-label="Trocar jogador" style="width:auto;max-width:100%">${e.players.filter(p => !p.dropped || p.id === cur).map(p => `<option value="${p.id}" ${p.id === cur ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select>`;
+  return `<select data-swap="${r.n}:${m.id}:${i}" aria-label="Trocar jogador" style="width:auto;max-width:100%">${e.players.filter(p => (!p.dropped && !p.espera) || p.id === cur).map(p => `<option value="${p.id}" ${p.id === cur ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select>`;
 }
 function matchRow(e, r, m) {
   const me = myPlayer(e); const w = E.winnerOf(m);
@@ -801,6 +902,9 @@ function tabRounds(e) {
         ${e.rounds.length ? `<button class="btn" data-act="edit-pairs">${S.editPairs ? 'Concluir edição das mesas' : 'Editar mesas'}</button>` : ''}
         ${e.rounds.length ? armBtn('undo-round', 'Desfazer última rodada', 'Confirmar desfazer') : ''}
       </div></div>`;
+    h += `<div class="panel spread"><div class="stack" style="gap:2px"><b>Divulgar as mesas</b><span class="small muted">${last ? 'Mande as mesas da rodada no grupo ou deixe o telão aberto numa TV.' : 'Deixe o telão aberto numa TV: ele mostra o check-in, as mesas, o relógio e a classificação.'}</span></div>
+      <div class="row">${last ? `<button class="btn sm" data-copy="round">Copiar mesas</button><a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(roundText(e, last))}">Enviar no WhatsApp</a>` : ''}<a class="btn sm primary" target="_blank" rel="noopener" href="${esc(eventLink(e, 'telao'))}">Abrir telão</a></div>
+      ${last ? `<div id="copy-round" hidden>${esc(roundText(e, last))}</div>` : ''}</div>`;
   }
   if (!e.rounds.length) return h + `<div class="empty">${e.players.length < 2 ? 'Adicione pelo menos 2 jogadores para gerar a primeira rodada.' : 'As rodadas aparecem aqui assim que a organização gerar os pareamentos.'}</div>`;
   e.rounds.slice().reverse().forEach((r, idx) => {
@@ -819,7 +923,7 @@ function tabRounds(e) {
 function tabStandings(e) {
   const stage = 'main';
   if (!e.rounds.length) return `<div class="empty">A classificação aparece depois da primeira rodada.</div>`;
-  const multi = E.isMulti(e), st = E.standings(e, stage);
+  const multi = E.isMulti(e), st = E.standings(e, stage).filter(s => !s.p.espera);
   const me = myPlayer(e);
   const pods = e.estrutura === 'draft' ? [...new Set(e.players.map(p => p.pod).filter(Boolean))].sort((a, b) => a - b) : [];
   const table = (rows, title) => `<div class="panel" style="padding:0">${title ? `<div style="padding:14px 16px"><h3 style="margin:0">${title}</h3></div>` : ''}<div class="tbl-wrap"><table>
@@ -953,7 +1057,7 @@ async function uploadMedia(files) {
 // ---------- divulgação ----------
 function promoText(e) {
   const regras = lines(e.regras);
-  const n = e.players.length, max = +e.vagas || 0;
+  const n = seatCount(e), max = +e.vagas || 0;
   return [
     `MAGIC DRINK · ${e.nome.toUpperCase()}`,
     '',
@@ -1049,7 +1153,7 @@ async function drawFlyer(canvas, e, kind) {
   if (onde) c.fillText(wrapLines(c, onde, inner - boxW - 32, 1)[0], pad + boxW + 32, y + boxH * 0.8);
   y += boxH + (tall ? 80 : square ? 44 : 60);
   // informações
-  const n = e.players.length, max = +e.vagas || 0;
+  const n = seatCount(e), max = +e.vagas || 0;
   const info = [
     ['FORMATO', e.formatoNome],
     ['ESTRUTURA', ESTRUTURAS[e.estrutura].nome + (+e.topCut ? (E.isMulti(e) ? ' + mesa final' : ` + top ${e.topCut}`) : '')],
@@ -1143,12 +1247,22 @@ function tabConfig(e) {
 function viewAdmin() {
   const evs = sortedEvents();
   let h = `<div class="spread"><div><div class="eyebrow">Organização</div><h1 class="display" style="font-size:28px">Seus eventos</h1></div>${S.newEvent ? '' : '<button class="btn primary" data-act="new-event">Criar evento</button>'}</div>`;
+  h += backupPanel();
   if (S.newEvent) h += `<div class="panel"><h3>Novo evento</h3>${eventForm(null, true)}</div>`;
   if (!evs.length) return h + `<div class="empty">Nenhum evento ainda. Crie o primeiro: escolha um formato, a data e o local. Depois adicione jogadores e gere as rodadas.</div>`;
   h += `<div class="panel" style="padding:0"><div class="tbl-wrap"><table><thead><tr><th>Data</th><th>Evento</th><th>Formato</th><th>Status</th><th class="r">Jogadores</th><th class="r">Rodadas</th></tr></thead><tbody>
     ${evs.map(e => `<tr style="cursor:pointer" data-open="${e.id}"><td class="num">${e.data ? e.data.split('-').reverse().join('/') : '—'}</td><td><a href="#" data-open="${e.id}"><b>${esc(e.nome)}</b></a></td><td>${esc(e.formatoNome)}<div class="small muted">${esc(ESTRUTURAS[e.estrutura].nome)}</div></td><td>${statusChip(e.status)}</td><td class="r num">${e.players.length}${+e.vagas ? '/' + e.vagas : ''}${pendingFor(e).length ? ` <span class="chip gold">+${pendingFor(e).length}</span>` : ''}</td><td class="r num">${e.rounds.length}</td></tr>`).join('')}
   </tbody></table></div></div>`;
   return h;
+}
+
+function backupPanel() {
+  const r = S.restore;
+  if (r) return `<div class="panel stack" style="border-color:var(--brand)"><b>Restaurar a cópia de ${esc(r.exportadoEm ? new Date(r.exportadoEm).toLocaleString('pt-BR') : 'arquivo')}?</b>
+    <div class="small">Ela tem ${Object.keys(r.events || {}).length} eventos, ${Object.keys(r.formats || {}).length} formatos e ${Object.keys(r.regs || {}).length} inscrições. Os itens com o mesmo nome no site serão substituídos pelos da cópia. O que não está na cópia continua como está.</div>
+    <div class="row">${armBtn('restore-go', 'Restaurar', 'Confirmar restauração')}<button class="btn sm" data-act="restore-cancel">Cancelar</button></div></div>`;
+  return `<div class="panel spread"><div class="stack" style="gap:2px"><b>Cópia de segurança</b><span class="small muted">Baixa todos os eventos, jogadores, resultados, formatos e inscrições num arquivo. Guarde de vez em quando.</span></div>
+    <div class="row"><button class="btn sm primary" data-act="backup">Baixar cópia</button><label class="btn sm" style="cursor:pointer">Restaurar cópia<input type="file" accept=".json,application/json" data-restore hidden></label></div></div>`;
 }
 
 // ---------- formatos e regras ----------
@@ -1210,11 +1324,13 @@ function readList(e) {
 }
 
 document.addEventListener('click', async ev0 => {
-  const t = ev0.target.closest('[data-nav],[data-open],[data-tab],[data-act],[data-approve],[data-drop],[data-editfmt],[data-copy],[data-lightbox],[data-lbnav],[data-lbclose],#brand');
+  const t = ev0.target.closest('[data-nav],[data-open],[data-tab],[data-act],[data-approve],[data-drop],[data-editfmt],[data-copy],[data-lightbox],[data-lbnav],[data-lbclose],[data-perfil],[data-tvexit],#brand');
   if (!t) return;
   if (t.id === 'brand') { S.view = 'home'; render(); return; }
   if (t.dataset.nav) { S.view = t.dataset.nav; S.newEvent = false; render(); window.scrollTo(0, 0); return; }
   if (t.dataset.open) { ev0.preventDefault(); S.view = 'event'; S.eventId = t.dataset.open; S.tab = 'info'; watchMedia(S.eventId); render(); window.scrollTo(0, 0); return; }
+  if (t.dataset.perfil) { ev0.preventDefault(); S.view = 'perfil'; S.perfil = t.dataset.perfil; render(); window.scrollTo(0, 0); return; }
+  if (t.hasAttribute('data-tvexit')) { if (/^#telao\//.test(location.hash)) history.replaceState(null, '', location.pathname); S.view = ev() ? 'event' : 'home'; render(); return; }
   if (t.dataset.lightbox) { S.lightbox = t.dataset.lightbox; render(); return; }
   if (t.dataset.lbnav) { const i = S.media.findIndex(m => m.id === S.lightbox) + +t.dataset.lbnav; if (S.media[i]) S.lightbox = S.media[i].id; render(); return; }
   if (t.hasAttribute('data-lbclose')) { S.lightbox = null; render(); return; }
@@ -1229,9 +1345,9 @@ document.addEventListener('click', async ev0 => {
   if (t.dataset.approve) {
     const uid = t.dataset.approve, reg = S.regs[uid];
     return mutate(e => {
-      if (+e.vagas && e.players.length >= +e.vagas) toast('Atenção: o evento passou do limite de vagas.');
       const x = reg.eventos[e.id];
-      e.players.push({ id: E.rid(), nome: reg.nome, deck: x.deck || '', regUid: uid, contato: reg.contato || '', lista: x.lista || '', valor: x.valor });
+      const np = addPlayer(e, { id: E.rid(), nome: reg.nome, deck: x.deck || '', regUid: uid, contato: reg.contato || '', lista: x.lista || '', valor: x.valor });
+      if (np.espera) toast(`Vagas esgotadas: ${np.nome} entrou na lista de espera.`);
     });
   }
   if (t.dataset.drop) return mutate(e => { const p = e.players.find(x => x.id === t.dataset.drop); p.dropped = !p.dropped; });
@@ -1244,9 +1360,7 @@ document.addEventListener('click', async ev0 => {
     await drawFlyer(cv, e, S.flyerKind || 'post');
     const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
     const filename = 'flyer-' + (e.nome || 'magic-drink').normalize('NFD').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase() + '.png';
-    if (!S.downloads) { toast('Não foi possível salvar aqui. No celular, toque e segure no flyer para salvar a imagem.'); return; }
-    try { const r = await S.downloads.save({ filename, data: blob }); if (r && r.status === 'saved') toast('Flyer salvo'); }
-    catch (err) { if (err && err.code !== 'cancelled') toast('Não foi possível salvar o flyer.'); }
+    if (await saveFile(blob, filename)) toast('Flyer salvo');
     return;
   }
   if (act === 'checkin-open' || act === 'checkin-close') return mutate(e => { e.checkinAberto = act === 'checkin-open'; });
@@ -1268,6 +1382,28 @@ document.addEventListener('click', async ev0 => {
     const [, rn, mid] = act.split(':');
     return mutate(e => { const r = e.rounds.find(x => x.n === +rn), m = r && r.matches.find(x => x.id === mid); const v = m && agreedReport(e, r, m); if (!v) return false; m.result = parseResult(v); }).then(() => toast('Resultado confirmado'));
   }
+  if (act === 'backup') {
+    const data = { app: 'magic-drink', versao: 1, exportadoEm: new Date().toISOString(), events: S.events, formats: S.formats, regs: S.regs, media: {} };
+    if (S.mode === 'db') for (const id of Object.keys(S.events)) {
+      try { const snap = await S.db.collection('events/' + id + '/media').get(); if (snap.docs.length) data.media[id] = Object.fromEntries(snap.docs.map(d => [d.id, d.data()])); } catch (err) {}
+    }
+    const blob = new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' });
+    if (await saveFile(blob, 'magic-drink-copia-' + new Date().toISOString().slice(0, 10) + '.json')) toast('Cópia de segurança salva');
+    return;
+  }
+  if (act === 'restore-cancel') { S.restore = null; render(); return; }
+  if (act === 'restore-go') {
+    if (!armed(act)) return;
+    const d = S.restore; S.restore = null; render();
+    try {
+      for (const [id, v] of Object.entries(d.formats || {})) await store.save('formats', id, v);
+      for (const [id, v] of Object.entries(d.events || {})) await store.save('events', id, v);
+      for (const [id, v] of Object.entries(d.regs || {})) await store.save('regs', id, v);
+      if (S.mode === 'db') for (const [eid, ms] of Object.entries(d.media || {})) for (const [mid, v] of Object.entries(ms)) await S.db.doc('events/' + eid + '/media/' + mid).set(v);
+      toast('Cópia restaurada');
+    } catch (err) { toast('A restauração parou no meio. Tente de novo.'); }
+    return;
+  }
   if (act === 'edit-pairs') { S.editPairs = !S.editPairs; render(); return; }
   if (act === 'new-event') { S.view = 'admin'; S.newEvent = true; render(); window.scrollTo(0, 0); return; }
   if (act === 'cancel-new') { S.newEvent = false; render(); return; }
@@ -1278,7 +1414,7 @@ document.addEventListener('click', async ev0 => {
     if (!rows.length) { toast('Digite pelo menos um nome.'); return; }
     $('#add-players').value = '';
     return mutate(e => {
-      rows.forEach(r => { const [nome, deck] = r.split(';').map(s => s.trim()); if (nome) e.players.push({ id: E.rid(), nome: nome.slice(0, 60), deck: (deck || '').slice(0, 80) }); });
+      rows.forEach(r => { const [nome, deck] = r.split(';').map(s => s.trim()); if (nome) addPlayer(e, { id: E.rid(), nome: nome.slice(0, 60), deck: (deck || '').slice(0, 80) }); });
       if (e.estrutura === 'roundrobin' && e.rounds.length) toast('Em todos contra todos, quem entra depois do início não é incluído na tabela.');
     }).then(() => toast(rows.length === 1 ? 'Jogador adicionado' : `${rows.length} jogadores adicionados`));
   }
@@ -1326,6 +1462,15 @@ document.addEventListener('change', ev0 => {
       const later = e.rounds.findIndex(r => r.n === +rn) < e.rounds.length - 1;
       if (later) toast('Resultado alterado numa rodada anterior. Os pareamentos já gerados não mudam.');
     });
+  }
+  if (t.hasAttribute && t.hasAttribute('data-restore')) {
+    const file = t.files[0]; t.value = ''; if (!file) return;
+    file.text().then(txt => {
+      let d; try { d = JSON.parse(txt); } catch (err) { d = null; }
+      if (!d || d.app !== 'magic-drink') { toast('Este arquivo não é uma cópia do Magic Drink.'); return; }
+      S.restore = d; render();
+    });
+    return;
   }
   if (t.hasAttribute && t.hasAttribute('data-upload')) { const files = [...t.files]; t.value = ''; if (files.length) uploadMedia(files); return; }
   if (t.dataset.legenda) {
@@ -1450,9 +1595,9 @@ function startWatching() {
 }
 // links diretos: #evento/<id> e #checkin/<id>
 function routeFromHash() {
-  const m = location.hash.match(/^#(evento|checkin)\/([\w-]+)/);
+  const m = location.hash.match(/^#(evento|checkin|telao)\/([\w-]+)/);
   if (!m) return;
-  S.view = 'event'; S.eventId = m[2]; S.tab = 'info'; watchMedia(S.eventId);
+  S.view = m[1] === 'telao' ? 'telao' : 'event'; S.eventId = m[2]; S.tab = 'info'; watchMedia(S.eventId);
 }
 window.addEventListener('hashchange', () => { routeFromHash(); render(); window.scrollTo(0, 0); });
 async function boot() {

@@ -38,6 +38,14 @@ Abra o site, clique em **Organizador** e entre com o e-mail e a senha do passo 1
 - **Pix**: preencha a chave Pix no evento. O jogador inscrito vê o QR code com o valor da inscrição e avisa quando pagou; você confirma na coluna Pago.
 - **Lista do deck**: em Configurar, marque "Pedir a lista do deck" e, para Duel Commander 500, o valor máximo. A inscrição pede a lista e o valor total pela LigaMagic e recusa valores acima do limite.
 - **Ranking**: soma os pontos de todos os eventos já realizados. Cada evento pode ficar fora do ranking em Configurar.
+- **Telão**: na aba Rodadas, clique em **Abrir telão** e deixe a página aberta numa TV. Ela mostra o QR code do check-in, as mesas, o relógio e a classificação, e se atualiza sozinha.
+- **Mesas no WhatsApp**: na aba Rodadas, **Copiar mesas** ou **Enviar no WhatsApp** monta a mensagem da rodada para o grupo.
+- **Perfil do jogador**: no Ranking, toque no nome do jogador para ver o histórico dele.
+- **Lista de espera**: quando as vagas acabam, quem entra fica na lista de espera e fora dos pareamentos. Se alguém desistir antes da 1ª rodada, o primeiro da fila entra sozinho.
+
+## Cópia de segurança
+
+Em **Organizar**, **Baixar cópia** salva todos os eventos, formatos, inscrições e a lista de fotos e vídeos num arquivo `.json`. **Restaurar cópia** devolve esses dados ao site: substitui os itens com o mesmo nome e não apaga o que não está na cópia. Os arquivos de foto e vídeo ficam no Supabase e não vão para a cópia.
 
 ## Arquivos
 

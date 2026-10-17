@@ -3,7 +3,7 @@ const ENGINE = (() => {
   const rid = () => Math.random().toString(36).slice(2, 10);
   const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const pts = ev => Object.assign({ v: 3, e: 1, d: 0 }, ev.pontos || {});
-  const active = ev => ev.players.filter(p => !p.dropped);
+  const active = ev => ev.players.filter(p => !p.dropped && !p.espera);
   const stageRounds = (ev, stage) => ev.rounds.filter(r => (r.stage || 'main') === stage);
 
   // quem já enfrentou quem (em qualquer rodada)
@@ -148,7 +148,7 @@ const ENGINE = (() => {
     // rotação: fixa o primeiro, gira o resto k posições
     const rest = ids.slice(1); const r2 = rest.slice(rest.length - (k % rest.length)).concat(rest.slice(0, rest.length - (k % rest.length)));
     const arr = [ids[0], ...r2];
-    const dropped = new Set(ev.players.filter(p => p.dropped).map(p => p.id));
+    const dropped = new Set(ev.players.filter(p => p.dropped || p.espera).map(p => p.id));
     const matches = [];
     for (let i = 0; i < n / 2; i++) {
       const a = arr[i], b = arr[n - 1 - i];
@@ -287,7 +287,7 @@ const ENGINE = (() => {
     const n = +ev.topCut;
     const last = ev.rounds[ev.rounds.length - 1];
     if (last && !roundDone(last)) throw new Error('Lance todos os resultados antes de iniciar o top.');
-    const st = standings(ev, 'main').filter(s => !s.p.dropped);
+    const st = standings(ev, 'main').filter(s => !s.p.dropped && !s.p.espera);
     if (isMulti(ev)) {
       const ids = st.slice(0, Math.min(n || +ev.podSize || 4, st.length)).map(s => s.p.id);
       ev.cutSeeds = ids;
