@@ -19,9 +19,9 @@
 <style>html,body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,600..900,0..100&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: topo laranja com a logo laranja; corpo laranja; conteúdo em blocos pretos com texto claro e destaques em laranja. Visual único (não muda com o tema do aparelho). */
+/* Layout: topo laranja com a logo laranja e faixa nas cinco cores de mana; fundo preto; blocos pretos em moldura de carta, com destaques em laranja. Visual único (não muda com o tema do aparelho). */
 :root {
   --brand: #f6b210; --brand-ink: #111111;
   --bg: #000000; --surface: #111111; --surface-2: #1f1f1f; --ink: #f4f1ec; --muted: #a9a29a; --line: #2e2b28;
@@ -29,8 +29,10 @@
   --btn-bg: transparent; --btn-fg: #f4f1ec; --btn-line: #4a4540; --btnp-bg: #f6b210; --btnp-fg: #111111;
   --field-bg: #fff8ea; --field-ink: #111111; --field-line: #c9a24a;
   --ok: #5cc895; --ok-soft: #15301f; --warn: #f6b210; --warn-soft: #33270a; --bad: #f08a80; --bad-soft: #3c1a18;
-  --mana-w: #f2ead0; --mana-u: #2f6fb3; --mana-b: #3e3646; --mana-r: #c8402f; --mana-g: #2a7d4f;
-  --f-display: "Fraunces", "Cooper Black", Georgia, serif;
+  --mana-w: #e9dfb9; --mana-u: #3b82c4; --mana-b: #8a7d94; --mana-r: #d24a35; --mana-g: #2f9a5e;
+  --wubrg: linear-gradient(90deg, var(--mana-w) 0 20%, var(--mana-u) 20% 40%, var(--mana-b) 40% 60%, var(--mana-r) 60% 80%, var(--mana-g) 80% 100%);
+  --mythic: linear-gradient(135deg, #f7d26a, #e8611b); --rare: linear-gradient(135deg, #f3dc95, #b88a2c); --uncommon: linear-gradient(135deg, #e7eef4, #8e9ba8);
+  --f-display: "Cinzel", "Trajan Pro", Georgia, serif;
   --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
   --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
   --r: 10px;
@@ -51,16 +53,17 @@
 }
 
 * { box-sizing: border-box; }
-body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body); }
+body { background: radial-gradient(1100px 520px at 50% -180px, #1c1405, #000000 72%) fixed, var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body); }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--brand); }
 button, input, select, textarea { font: inherit; color: inherit; }
 a { color: var(--accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.15; }
-.display, .hero h1, .evhead h1, .evcard h3 { font-variation-settings: "SOFT" 100, "WONK" 0; }
+.display, .hero h1, .evhead h1, .evcard h3 { letter-spacing: .01em; }
 .mono, .num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
 
-.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--brand); color: var(--brand-ink); border-bottom: 2px solid #111111; }
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--brand); color: var(--brand-ink); }
+.top::after, .wubrg { content: ""; display: block; height: 4px; background: var(--wubrg); }
 .top-in, .wrap { max-width: 1080px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .top-in { display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; padding-block: 8px; }
 .brand { display: block; background: none; border: 0; padding: 0; cursor: pointer; }
@@ -204,7 +207,8 @@ td.r, th.r { text-align: right; }
 .bm .w { font-weight: 700; color: var(--ok); }
 .bm .tbd { color: var(--muted); font-style: italic; }
 .champ { display: flex; gap: 12px; align-items: center; background: var(--surface); color: var(--ink); border-radius: var(--r); padding: 14px 18px; font-weight: 700; }
-.champ b { font-family: var(--f-display); font-weight: 900; font-size: 24px; color: var(--brand-ink); }
+.champ b { font-family: var(--f-display); font-weight: 900; font-size: 24px; color: var(--brand); }
+.champ { border: 2px solid transparent; background: linear-gradient(#141210, #0e0d0c) padding-box, var(--mythic) border-box; }
 
 .rules ol { margin: 0; padding-left: 22px; display: grid; gap: 6px; }
 .gallery { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); }
@@ -232,6 +236,32 @@ td.r, th.r { text-align: right; }
 .list-plain { list-style: none; margin: 0; padding: 0; }
 .list-plain li { padding: 8px 0; border-bottom: 1px solid var(--line); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+/* ---------- toques de Magic: The Gathering ---------- */
+/* blocos como molduras de carta: borda dupla com fio dourado por dentro */
+.panel, .evcard, .hero, .champ { border-color: #2c261c; box-shadow: inset 0 0 0 4px #111111, inset 0 0 0 5px rgba(246, 178, 16, .14); background-image: linear-gradient(180deg, rgba(246, 178, 16, .04), transparent 45%); }
+.panel, .hero { border-radius: 14px; }
+/* símbolos de mana */
+.mana { display: inline-flex; gap: 3px; align-items: center; }
+.mana svg { width: 18px; height: 18px; display: block; filter: drop-shadow(0 1px 0 rgba(0, 0, 0, .6)); }
+.hero .mana svg { width: 26px; height: 26px; }
+/* carta de evento: moldura na identidade de cor do formato */
+.evcard { border: 3px solid transparent; border-radius: 16px; background: linear-gradient(#121110, #0c0b0a) padding-box, var(--id, linear-gradient(#3a3020, #3a3020)) border-box; box-shadow: inset 0 0 0 1px rgba(246, 178, 16, .16); }
+.evcard:hover { border-color: transparent; box-shadow: inset 0 0 0 1px rgba(246, 178, 16, .5), 0 0 0 2px var(--brand); }
+.evcard .namebar { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: linear-gradient(180deg, #2a241a, #1a1610); border: 1px solid #3a3020; border-radius: 8px; padding: 6px 10px; }
+.evcard .namebar h3 { font-size: 17px; min-width: 0; }
+.typeline { font-size: 13px; font-weight: 700; color: var(--ink); background: linear-gradient(180deg, #221d15, #16130e); border: 1px solid #3a3020; border-radius: 6px; padding: 4px 10px; display: flex; justify-content: space-between; gap: 8px; }
+.typeline .set { width: 14px; height: 14px; border-radius: 50%; background: var(--rare); flex: none; align-self: center; }
+/* raridade no ranking: mítica, rara e incomum */
+.rar { display: inline-grid; place-items: center; min-width: 30px; height: 24px; padding: 0 8px; border-radius: 999px; color: #111111; font-weight: 800; font-size: 12px; }
+.rar.m { background: var(--mythic); } .rar.r { background: var(--rare); } .rar.u { background: var(--uncommon); }
+/* títulos de seção com filete dourado */
+section h2.display { display: flex; align-items: center; gap: 14px; }
+section h2.display::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(246, 178, 16, .7), transparent); }
+.tabs button[aria-selected="true"] { color: var(--brand); border-bottom-color: var(--brand); }
+.rules ol li::marker { color: var(--brand); font-family: var(--f-display); font-weight: 700; }
+.btn.primary { background: linear-gradient(180deg, #ffd25a, #f6b210 55%, #d9960a); border-color: #b97f06; }
+.mesa b { display: grid; place-items: center; width: 36px; height: 36px; margin-top: 2px; border-radius: 50%; border: 2px solid var(--brand); background: #1a1610; color: var(--brand); font-size: 16px; }
+.hero .next .btn.primary { background: #111111; border-color: #111111; color: var(--brand); }
 </style>
 
 </head>
@@ -287,7 +317,6 @@ const STATUS = {
   rascunho: { nome: 'Rascunho', cls: 'draft' }, inscricoes: { nome: 'Inscrições abertas', cls: 'open' },
   fechado: { nome: 'Inscrições encerradas', cls: '' }, andamento: { nome: 'Em andamento', cls: 'live' }, encerrado: { nome: 'Encerrado', cls: '' },
 };
-const MANA = { w: 'var(--mana-w)', u: 'var(--mana-u)', b: 'var(--mana-b)', r: 'var(--mana-r)', g: 'var(--mana-g)' };
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 
@@ -348,7 +377,17 @@ function dateBox(d) {
   const [, m, dd] = d.split('-').map(Number);
   return `<div class="datebox"><b>${dd}</b><span>${MESES[m - 1]}</span></div>`;
 }
-const manaPips = arr => `<span class="mana" aria-hidden="true">${(arr || []).map(c => `<i style="background:${MANA[c]}"></i>`).join('')}</span>`;
+// símbolos de mana desenhados à mão (sol, gota, caveira, chama e árvore)
+const MANA_PIP = {
+  w: ['#f8f4dc', '<circle cx="10" cy="10" r="3.2"/><path d="M10 3.2v2.2M10 14.6v2.2M3.2 10h2.2M14.6 10h2.2M5.2 5.2l1.6 1.6M13.2 13.2l1.6 1.6M14.8 5.2l-1.6 1.6M6.8 13.2l-1.6 1.6" stroke="#2b2416" stroke-width="1.5" stroke-linecap="round"/>'],
+  u: ['#bcd6ee', '<path d="M10 3.5C10 3.5 5.6 9.2 5.6 12a4.4 4.4 0 0 0 8.8 0C14.4 9.2 10 3.5 10 3.5Z"/>'],
+  b: ['#c4bab6', '<path d="M10 3.8a5.2 5.2 0 0 0-5.2 5.2c0 1.9 1 3.1 2.1 3.8V15.6h6.2v-2.8c1.1-.7 2.1-1.9 2.1-3.8A5.2 5.2 0 0 0 10 3.8Z"/><circle cx="8" cy="9.4" r="1.3" fill="#c4bab6"/><circle cx="12" cy="9.4" r="1.3" fill="#c4bab6"/>'],
+  r: ['#f0a98a', '<path d="M10.3 3c.9 3 4.3 4.6 4.3 8.6a4.6 4.6 0 0 1-9.2 0c0-2.1 1-3.4 2.2-4.4 0 1.6.6 2.6 1.6 2.8-.6-2.4-.4-4.7 1.1-7Z"/>'],
+  g: ['#a9cf9f', '<path d="M10 3.2l4.6 6.6h-2.5l3 4.1H4.9l3-4.1H5.4Z"/><rect x="9" y="13.8" width="2" height="3.2" rx=".5"/>'],
+};
+const manaSvg = c => MANA_PIP[c] ? `<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9.5" fill="${MANA_PIP[c][0]}" stroke="#111" stroke-width="1"/><g fill="#211c14">${MANA_PIP[c][1]}</g></svg>` : '';
+const manaPips = arr => `<span class="mana" aria-hidden="true">${(arr || []).map(manaSvg).join('')}</span>`;
+const idBorder = arr => { const cs = (arr && arr.length ? arr : ['w', 'u', 'b', 'r', 'g']).map(c => `var(--mana-${c})`); return `linear-gradient(135deg, ${(cs.length === 1 ? [cs[0], cs[0]] : cs).join(', ')})`; };
 const statusChip = s => { const x = STATUS[s] || STATUS.rascunho; return `<span class="chip ${x.cls}">${x.nome}</span>`; };
 const lines = t => String(t || '').split('\n').map(s => s.trim()).filter(Boolean);
 const pname = (ev, id) => { const p = ev.players.find(x => x.id === id); return p ? p.nome : '—'; };
@@ -550,8 +589,8 @@ function viewRanking() {
   const rows = rankingTable();
   h += `<div class="panel" style="padding:0"><div class="tbl-wrap"><table>
     <thead><tr><th>#</th><th>Jogador</th><th class="r">Pontos</th><th class="r">Eventos</th><th class="r">V-D-E</th><th class="r">Títulos</th></tr></thead>
-    <tbody>${rows.map((r, i) => `<tr><td class="num">${i < 3 ? `<span class="chip gold">${i + 1}º</span>` : i + 1}</td><td><a href="#" data-perfil="${esc(r.key)}"><b>${esc(r.nome)}</b></a></td><td class="r num"><b>${r.pts}</b></td><td class="r num">${r.ev}</td><td class="r num">${r.w}-${r.l}-${r.d}</td><td class="r num">${r.titulos || ''}</td></tr>`).join('')}</tbody></table></div></div>
-    <p class="small muted" style="margin:0">Soma dos pontos de todas as partidas dos ${evs.length} ${evs.length === 1 ? 'evento realizado' : 'eventos realizados'}, com a pontuação de cada evento, incluindo top e mesa final. Desempate: títulos, vitórias e menos eventos jogados. O jogador é identificado pelo nome, então use sempre o mesmo nome nas inscrições.</p>`;
+    <tbody>${rows.map((r, i) => `<tr><td class="num">${i < 3 ? `<span class="rar ${'mru'[i]}" title="${['Mítico', 'Raro', 'Incomum'][i]}">${i + 1}º</span>` : i + 1}</td><td><a href="#" data-perfil="${esc(r.key)}"><b>${esc(r.nome)}</b></a></td><td class="r num"><b>${r.pts}</b></td><td class="r num">${r.ev}</td><td class="r num">${r.w}-${r.l}-${r.d}</td><td class="r num">${r.titulos || ''}</td></tr>`).join('')}</tbody></table></div></div>
+    <p class="small muted" style="margin:0">Soma dos pontos de todas as partidas ${evs.length === 1 ? 'do único evento realizado' : `dos ${evs.length} eventos realizados`}, com a pontuação de cada evento, incluindo top e mesa final. Desempate: títulos, vitórias e menos eventos jogados. O jogador é identificado pelo nome, então use sempre o mesmo nome nas inscrições.</p>`;
   return h;
 }
 
@@ -567,7 +606,7 @@ function viewPerfil() {
     <div class="row"><span class="chip gold num">${row.pts} pontos</span><span class="chip num">${row.ev} ${row.ev === 1 ? 'evento' : 'eventos'}</span><span class="chip num">${row.w}-${row.l}-${row.d}</span>${row.titulos ? `<span class="chip open num">${row.titulos} ${row.titulos === 1 ? 'título' : 'títulos'}</span>` : ''}</div>
     <div class="panel" style="padding:0"><div class="tbl-wrap"><table>
     <thead><tr><th>Data</th><th>Evento</th><th>Formato</th>${showDeck ? '<th>Deck</th>' : ''}<th class="r">Colocação</th><th class="r">V-D-E</th><th class="r">Pontos</th></tr></thead>
-    <tbody>${hist.map(({ e, t, pl }) => `<tr><td class="num">${e.data ? e.data.split('-').reverse().join('/') : '—'}</td><td><a href="#" data-open="${e.id}"><b>${esc(e.nome)}</b></a></td><td>${esc(e.formatoNome)}</td>${showDeck ? `<td class="muted">${S.admin || e.mostrarDecks ? esc(t.p.deck || '') : ''}</td>` : ''}<td class="r num">${pl === 1 ? '<span class="chip gold">Campeão</span>' : pl ? pl + 'º' : '—'}</td><td class="r num">${t.w}-${t.l}-${t.d}</td><td class="r num"><b>${t.mp}</b></td></tr>`).join('')}</tbody></table></div></div>`;
+    <tbody>${hist.map(({ e, t, pl }) => `<tr><td class="num">${e.data ? e.data.split('-').reverse().join('/') : '—'}</td><td><a href="#" data-open="${e.id}"><b>${esc(e.nome)}</b></a></td><td>${esc(e.formatoNome)}</td>${showDeck ? `<td class="muted">${S.admin || e.mostrarDecks ? esc(t.p.deck || '') : ''}</td>` : ''}<td class="r num">${pl === 1 ? '<span class="rar m">Campeão</span>' : pl ? pl + 'º' : '—'}</td><td class="r num">${t.w}-${t.l}-${t.d}</td><td class="r num"><b>${t.mp}</b></td></tr>`).join('')}</tbody></table></div></div>`;
 }
 
 // ---------- telão ----------
@@ -577,7 +616,7 @@ function viewTelao() {
   const last = e.rounds[e.rounds.length - 1];
   const clock = last && last.inicio && e.minutos ? `<span class="clock" data-clock="${last.inicio + e.minutos * 60000}">--:--</span>` : '';
   const champ = champion(e);
-  let h = `<div class="tv-head"><img src="logo-laranja.png" alt="Magic Drink"><div style="flex:1;min-width:0"><div class="eyebrow">${last ? esc(roundTitle(e, last)) : esc(fmtDate(e.data, e.hora))}</div><h1 class="display">${esc(e.nome)}</h1></div>${clock}</div>`;
+  let h = `<div class="tv-head"><img src="logo-laranja.png" alt="Magic Drink"><div style="flex:1;min-width:0"><div class="eyebrow">${last ? esc(roundTitle(e, last)) : esc(fmtDate(e.data, e.hora))}</div><h1 class="display">${esc(e.nome)}</h1></div>${clock}</div><div class="wubrg" style="border-radius:2px"></div>`;
   if (champ) h += `<div class="champ" style="font-size:28px"><span>Campeão</span><b>${esc(pname(e, champ))}</b></div>`;
   let left;
   if (!last) {
@@ -604,6 +643,7 @@ function viewHome() {
   const next = upcoming[0];
   let h = `<section class="hero">
     <div class="stack">
+      ${manaPips(['w', 'u', 'b', 'r', 'g'])}
       <div class="eyebrow">Comunidade de Magic: The Gathering</div>
       <h1>Torneios, cartas e drinks</h1>
       <p>Encontros da comunidade do estado para jogar vários formatos de Magic com regras próprias. Veja os próximos eventos, as regras de cada formato, os pareamentos ao vivo e a classificação.</p>
@@ -644,10 +684,12 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 
 function evCard(e) {
   const n = seatCount(e), max = +e.vagas || 0;
-  return `<button class="evcard" data-open="${e.id}">
-    <div class="row" style="align-items:flex-start;flex-wrap:nowrap">${dateBox(e.data)}
-      <div class="stack" style="gap:4px;min-width:0"><h3>${esc(e.nome)}</h3><div class="muted small">${esc(e.hora || '')}${e.local ? ' · ' + esc(e.local) : ''}</div></div></div>
-    <div class="row">${statusChip(e.status)}<span class="chip">${manaPips(e.mana)} ${esc(e.formatoNome || '')}</span><span class="chip">${esc((ESTRUTURAS[e.estrutura] || {}).nome || '')}</span></div>
+  return `<button class="evcard" data-open="${e.id}" style="--id:${idBorder(e.mana)}">
+    <div class="namebar"><h3>${esc(e.nome)}</h3>${manaPips(e.mana)}</div>
+    <div class="row" style="align-items:center;flex-wrap:nowrap">${dateBox(e.data)}
+      <div class="stack" style="gap:4px;min-width:0"><div class="small">${esc(fmtDate(e.data, e.hora))}</div><div class="muted small">${esc(e.local || '')}${e.cidade ? ' · ' + esc(e.cidade) : ''}</div></div></div>
+    <div class="typeline"><span>Torneio — ${esc(e.formatoNome || '')}</span><i class="set" aria-hidden="true"></i></div>
+    <div class="row">${statusChip(e.status)}<span class="chip">${esc((ESTRUTURAS[e.estrutura] || {}).nome || '')}</span></div>
     ${max ? `<div class="stack" style="gap:4px"><div class="bar"><i style="width:${Math.min(100, n / max * 100)}%"></i></div><div class="small muted num">${n} de ${max} vagas preenchidas</div></div>` : `<div class="small muted num">${n} inscritos</div>`}
   </button>`;
 }
@@ -1133,7 +1175,7 @@ function wrapLines(ctx, text, maxW, maxLines) {
 async function drawFlyer(canvas, e, kind) {
   const { w: W, h: H } = FLYER[kind] || FLYER.post;
   canvas.width = W; canvas.height = H;
-  try { await Promise.all(['900 80px Fraunces', '700 30px Figtree', '600 40px Figtree', '500 30px "IBM Plex Mono"'].map(f => document.fonts.load(f))); } catch (err) {}
+  try { await Promise.all(['900 80px Cinzel', '700 30px Figtree', '600 40px Figtree', '500 30px "IBM Plex Mono"'].map(f => document.fonts.load(f))); } catch (err) {}
   let logo = null; try { logo = await loadLogo(); } catch (err) {}
   const c = canvas.getContext('2d');
   const OR = '#f6b210', BK = '#0b0b0b', WH = '#f4f1ec', MU = '#a9a29a';
@@ -1144,13 +1186,16 @@ async function drawFlyer(canvas, e, kind) {
   // faixa da logo
   const topH = tall ? 600 : square ? 300 : 420;
   c.fillStyle = OR; c.fillRect(0, 0, W, topH);
+  const stripe = y => ['#e9dfb9', '#3b82c4', '#8a7d94', '#d24a35', '#2f9a5e'].forEach((col, i) => { c.fillStyle = col; c.fillRect(Math.floor(i * W / 5), y, Math.ceil(W / 5) + 1, 10); });
+  stripe(topH);
   if (logo) { const lh = topH - (square ? 50 : 70), lw = lh * logo.width / logo.height; c.drawImage(logo, (W - lw) / 2, (topH - lh) / 2, lw, lh); }
   // rodapé
   const footH = square ? 130 : 160, footY = H - footH;
   c.fillStyle = OR; c.fillRect(0, footY, W, footH);
+  stripe(footY - 10);
   c.fillStyle = BK; c.textBaseline = 'alphabetic';
   sp('4px'); c.font = '700 26px Figtree'; c.fillText('INSCRIÇÕES', pad, footY + 52);
-  sp('0px'); c.font = '900 ' + (square ? 46 : 54) + 'px Fraunces';
+  sp('0px'); c.font = '700 ' + (square ? 46 : 54) + 'px Figtree';
   const contato = e.contato || 'Fale com a organização';
   c.fillText(wrapLines(c, contato, inner, 1)[0], pad, footY + (square ? 108 : 118));
   // corpo
@@ -1159,7 +1204,7 @@ async function drawFlyer(canvas, e, kind) {
   c.fillText('TORNEIO DE MAGIC: THE GATHERING', pad, y); sp('0px');
   y += tall ? 30 : 18;
   const nameSize = tall ? 96 : square ? 66 : 80;
-  c.font = `900 ${nameSize}px Fraunces`; c.fillStyle = WH;
+  c.font = `900 ${nameSize}px Cinzel`; c.fillStyle = WH;
   wrapLines(c, e.nome, inner, square ? 2 : 3).forEach(l => { y += nameSize * 1.05; c.fillText(l, pad, y); });
   y += tall ? 70 : square ? 34 : 48;
   // data
@@ -1168,14 +1213,14 @@ async function drawFlyer(canvas, e, kind) {
   c.fillStyle = BK; c.textAlign = 'center';
   if (e.data) {
     const [yy, mm, dd] = e.data.split('-').map(Number);
-    c.font = `900 ${square ? 58 : 66}px Fraunces`; c.fillText(String(dd), pad + boxW / 2, y + boxH * 0.58);
+    c.font = `900 ${square ? 58 : 66}px Cinzel`; c.fillText(String(dd), pad + boxW / 2, y + boxH * 0.58);
     sp('3px'); c.font = '700 24px Figtree'; c.fillText(MESES[mm - 1].toUpperCase(), pad + boxW / 2, y + boxH * 0.85); sp('0px');
     c.textAlign = 'left';
     const dt = new Date(yy, mm - 1, dd);
     c.fillStyle = WH; c.font = `600 ${square ? 38 : 42}px Figtree`;
     c.fillText(DIAS[dt.getDay()].replace(/^./, x => x.toUpperCase()) + (e.hora ? ' · ' + e.hora : ''), pad + boxW + 32, y + boxH * 0.42);
   } else {
-    c.font = '900 56px Fraunces'; c.fillText('?', pad + boxW / 2, y + boxH * 0.62); c.textAlign = 'left';
+    c.font = '900 56px Cinzel'; c.fillText('?', pad + boxW / 2, y + boxH * 0.62); c.textAlign = 'left';
     c.fillStyle = WH; c.font = '600 42px Figtree'; c.fillText('Data a definir', pad + boxW + 32, y + boxH * 0.42);
   }
   c.fillStyle = MU; c.font = '500 32px Figtree';
