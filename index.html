@@ -7,7 +7,7 @@
 <meta property="og:title" content="Magic Drink">
 <meta property="og:description" content="Torneios de Magic: The Gathering. Veja os eventos e faça sua inscrição.">
 <meta property="og:image" content="logo-laranja.png">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#ff8a1f">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -19,49 +19,36 @@
 <style>html,body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: fundo preto, sem topo; a logo dourada e os cinco símbolos de mana ficam no bloco da comunidade; blocos em moldura de carta de Magic, com destaques dourados. Visual único (não muda com o tema do aparelho). */
+/* Layout "Blocos laranja": faixa laranja no topo com o nome e o menu (na página inicial, também a chamada "Embaralhe. Jogue. Brinde."); fundo #111; blocos #1c1c1c arredondados; destaques e botões em pílula laranja. */
 :root {
-  --brand: #f6b210; --brand-ink: #111111;
-  --bg: #000000; --surface: #100e0b; --surface-2: #1e1a13; --ink: #f1e9d6; --muted: #aca28c; --line: #322a1d;
-  --accent: #f6b210; --accent-soft: #33270a; --gold: #f6b210; --gold-soft: #33270a;
-  --btn-bg: transparent; --btn-fg: #f4f1ec; --btn-line: #4a4540; --btnp-bg: #f6b210; --btnp-fg: #111111;
-  --field-bg: #fff8ea; --field-ink: #111111; --field-line: #c9a24a;
-  --ok: #5cc895; --ok-soft: #15301f; --warn: #f6b210; --warn-soft: #33270a; --bad: #f08a80; --bad-soft: #3c1a18;
+  --brand: #ff8a1f; --brand-ink: #111111;
+  --bg: #111111; --surface: #1c1c1c; --surface-2: #262626; --ink: #ffffff; --muted: #c4bab6; --line: #333333;
+  --accent: #ff8a1f; --accent-soft: #3a2410; --gold: #ff8a1f; --gold-soft: #3a2410;
+  --btn-bg: transparent; --btn-fg: #ffffff; --btn-line: #4a4a4a; --btnp-bg: #ff8a1f; --btnp-fg: #111111;
+  --field-bg: #ffffff; --field-ink: #111111; --field-line: #cfcfcf;
+  --ok: #5cc895; --ok-soft: #15301f; --warn: #ff8a1f; --warn-soft: #3a2410; --bad: #f08a80; --bad-soft: #3c1a18;
   --mana-w: #e9dfb9; --mana-u: #3b82c4; --mana-b: #8a7d94; --mana-r: #d24a35; --mana-g: #2f9a5e;
-  --wubrg: linear-gradient(90deg, var(--mana-w) 0 20%, var(--mana-u) 20% 40%, var(--mana-b) 40% 60%, var(--mana-r) 60% 80%, var(--mana-g) 80% 100%);
-  --mythic: linear-gradient(135deg, #f7d26a, #e8611b); --rare: linear-gradient(135deg, #f3dc95, #b88a2c); --uncommon: linear-gradient(135deg, #e7eef4, #8e9ba8);
-  --f-display: "Cinzel", "Trajan Pro", Georgia, serif;
-  --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-display: "Archivo Black", "Arial Black", sans-serif;
+  --f-body: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
   --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
-  --r: 10px;
+  --r: 24px;
   color-scheme: dark;
 }
-/* blocos pretos: os mesmos tokens, redefinidos para texto claro sobre preto */
-.panel, .evcard, .hero, .bm, .banner, .champ {
-  --surface: #100e0b; --surface-2: #1e1a13; --ink: #f1e9d6; --muted: #aca28c; --line: #322a1d;
-  --accent: #f6b210; --accent-soft: #33270a; --gold: #f6b210; --gold-soft: #33270a;
-  --btn-fg: #f4f1ec; --btn-line: #4a4540; --btnp-bg: #f6b210; --btnp-fg: #111111;
-  --ok: #5cc895; --ok-soft: #15301f; --warn: #f6b210; --warn-soft: #33270a; --bad: #f08a80; --bad-soft: #3c1a18;
-  color: var(--ink); border: 1px solid #2a2a2a;
-}
-
+.panel, .evcard, .hero, .bm, .banner, .champ { color: var(--ink); border: 0; }
 
 * { box-sizing: border-box; }
-body { background: radial-gradient(1100px 520px at 50% -180px, #1c1405, #000000 72%) fixed, var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body); }
-body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: #000000; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.5 var(--f-body); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--brand); }
 button, input, select, textarea { font: inherit; color: inherit; }
 a { color: var(--accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.15; }
-.display, .hero h1, .evhead h1, .evcard h3 { letter-spacing: .01em; }
+.display, .evhead h1, .evcard h3, .champ b, .tv-head h1 { font-weight: 400 !important; letter-spacing: -.01em; }
 .mono, .num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
 
 .wubrg { display: block; height: 4px; background: var(--wubrg); }
-.hero-brand { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.hero-brand img { height: 96px; width: auto; filter: drop-shadow(0 0 16px rgba(246, 178, 16, .25)); }
-@media (max-width: 560px) { .hero-brand img { height: 76px; } }
 .top-in, .wrap { max-width: 1080px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .top-in { display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; padding-block: 8px; }
 /* menu em botão flutuante */
@@ -74,7 +61,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.15; }
 .fab-menu button:hover { background: #222222; }
 .fab-menu button[aria-current="true"] { background: var(--brand); color: #111111; }
 #app { padding-bottom: 96px; }
-body.tv .fab, body.tv .fab-menu { display: none; }
+body.tv .fab, body.tv .fab-menu, body.tv .band { display: none !important; }
 
 
 .wrap { padding-block: 24px 64px; display: grid; gap: 24px; }
@@ -229,44 +216,65 @@ td.r, th.r { text-align: right; }
 .list-plain { list-style: none; margin: 0; padding: 0; }
 .list-plain li { padding: 8px 0; border-bottom: 1px solid var(--line); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
-/* ---------- toques de Magic: The Gathering ---------- */
-/* blocos como molduras de carta: borda dupla com fio dourado por dentro */
-.panel, .evcard, .hero, .champ { border-color: #2c261c; box-shadow: inset 0 0 0 4px #111111, inset 0 0 0 5px rgba(246, 178, 16, .14); background-image: linear-gradient(180deg, rgba(246, 178, 16, .04), transparent 45%); }
-.panel, .hero { border-radius: 14px; }
-/* símbolos de mana */
-.mana { display: inline-flex; gap: 3px; align-items: center; }
-.mana svg { width: 18px; height: 18px; display: block; filter: drop-shadow(0 1px 0 rgba(0, 0, 0, .6)); }
-.hero .mana svg { width: 26px; height: 26px; }
-/* carta de evento: moldura na identidade de cor do formato */
-.evcard { border: 3px solid transparent; border-radius: 16px; background: linear-gradient(#121110, #0c0b0a) padding-box, var(--id, linear-gradient(#3a3020, #3a3020)) border-box; box-shadow: inset 0 0 0 1px rgba(246, 178, 16, .16); }
-.evcard:hover { border-color: transparent; box-shadow: inset 0 0 0 1px rgba(246, 178, 16, .5), 0 0 0 2px var(--brand); }
-.evcard .namebar { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: linear-gradient(180deg, #2a241a, #1a1610); border: 1px solid #3a3020; border-radius: 8px; padding: 6px 10px; }
-.evcard .namebar h3 { font-size: 17px; min-width: 0; }
-.typeline { font-size: 13px; font-weight: 700; color: var(--ink); background: linear-gradient(180deg, #221d15, #16130e); border: 1px solid #3a3020; border-radius: 6px; padding: 4px 10px; display: flex; justify-content: space-between; gap: 8px; }
-.typeline .set { width: 14px; height: 14px; border-radius: 50%; background: var(--rare); flex: none; align-self: center; }
-/* raridade no ranking: mítica, rara e incomum */
-.rar { display: inline-grid; place-items: center; min-width: 30px; height: 24px; padding: 0 8px; border-radius: 999px; color: #111111; font-weight: 800; font-size: 12px; }
-.rar.m { background: var(--mythic); } .rar.r { background: var(--rare); } .rar.u { background: var(--uncommon); }
-/* títulos de seção com filete dourado */
-section h2.display { display: flex; align-items: center; gap: 14px; }
-section h2.display::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(246, 178, 16, .7), transparent); }
+/* ---------- modelo 4: blocos laranja ---------- */
+.band { background: var(--brand); color: #111111; }
+.band-in { max-width: 1200px; margin: 0 auto; padding: 18px max(24px, env(safe-area-inset-right, 0px)) 18px max(24px, env(safe-area-inset-left, 0px)); }
+.band-top { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; }
+.wordmark { background: none; border: 0; padding: 0; cursor: pointer; font-family: var(--f-display); font-size: 22px; color: #111111; letter-spacing: -.01em; }
+.topnav { display: flex; flex-wrap: wrap; gap: 4px 20px; }
+.topnav button { background: none; border: 0; padding: 10px 0; cursor: pointer; font-weight: 600; font-size: 16px; color: #111111; border-bottom: 2px solid transparent; }
+.topnav button[aria-current="true"] { border-bottom-color: #111111; }
+.band-hero { display: flex; flex-wrap: wrap; gap: 32px 40px; align-items: flex-end; padding: 40px 0 56px; }
+.band-hero h1 { flex: 1 1 520px; margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(56px, 9vw, 104px); line-height: .92; letter-spacing: -.02em; }
+.band-hero .lead { flex: 1 1 300px; display: flex; flex-direction: column; gap: 20px; }
+.band-hero p { margin: 0; font-size: 20px; line-height: 1.5; font-weight: 500; }
+.pill-dark { align-self: flex-start; background: #111111; color: var(--brand); border: 0; cursor: pointer; font: inherit; font-weight: 700; font-size: 18px; padding: 16px 30px; border-radius: 999px; }
+.pill-dark.sm { font-size: 15px; padding: 10px 18px; align-self: center; }
+@media (max-width: 640px) { .topnav { display: none; } .band-hero { padding: 24px 0 40px; } }
+@media (min-width: 641px) { .fab, .fab-menu { display: none !important; } }
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+.step { border-top: 4px solid var(--brand); padding-top: 18px; display: flex; flex-direction: column; gap: 8px; }
+.step .n { font-family: var(--f-display); font-size: 44px; color: var(--brand); line-height: 1; }
+.step h3 { font-size: 21px; }
+.step p { margin: 0; color: var(--muted); font-size: 16px; line-height: 1.5; }
+.home-row { display: flex; flex-wrap: wrap; gap: 24px; align-items: stretch; }
+.evlist { flex: 2 1 520px; background: var(--surface); border-radius: 24px; padding: 28px 32px; display: flex; flex-direction: column; }
+.evlist h2 { font-family: var(--f-display); font-weight: 400; font-size: 30px; margin-bottom: 8px; }
+.evrow { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.evrow:last-child { border-bottom: 0; }
+.evrow .t { flex: 1 1 280px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.evrow > .btn, .evrow > button { flex: none; }
+.evrow .t b { font-size: 19px; }
+.evrow .t span { color: var(--muted); }
+.rankcard { flex: 1 1 300px; background: var(--brand); color: #111111; border-radius: 24px; padding: 32px; display: flex; flex-direction: column; justify-content: space-between; gap: 24px; }
+.rankcard img { width: 120px; height: auto; border-radius: 20px; }
+.rankcard .k { font-family: var(--f-display); font-size: 28px; line-height: 1.1; }
+.rankcard .rk-go { align-self: flex-start; background: none !important; border: 0 !important; padding: 12px 0 !important; cursor: pointer; font: inherit; font-weight: 700; color: #111111; text-decoration: underline; }
+.btn { border-radius: 999px; }
+.btn.primary { color: #111111; }
 .tabs button[aria-selected="true"] { color: var(--brand); border-bottom-color: var(--brand); }
-.rules ol li::marker { color: var(--brand); font-family: var(--f-display); font-weight: 700; }
-.btn.primary { background: linear-gradient(180deg, #ffd25a, #f6b210 55%, #d9960a); border-color: #b97f06; }
-.mesa b { display: grid; place-items: center; width: 36px; height: 36px; margin-top: 2px; border-radius: 50%; border: 2px solid var(--brand); background: #1a1610; color: var(--brand); font-size: 16px; }
-.hero .next { border: 2px solid transparent; border-radius: 14px; background: linear-gradient(180deg, #1d1810, #0f0d0a) padding-box, var(--mythic) border-box; box-shadow: inset 0 0 0 4px #0f0d0a, inset 0 0 0 5px rgba(246, 178, 16, .25); }
-.hero .next .display { color: var(--brand); }
-/* data como moeda dourada */
-.datebox { background: linear-gradient(180deg, #ffd65e, #f6b210 55%, #c98a08); color: #1a1408; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35), 0 0 0 1px #6b4c08; }
-/* botão do menu como uma ficha dourada */
-.fab { background: radial-gradient(circle at 35% 30%, #ffe08a, #f6b210 45%, #a8740a); border: 2px solid #2b2110; box-shadow: 0 0 0 3px rgba(246, 178, 16, .35), 0 8px 20px rgba(0, 0, 0, .7); }
-.fab-menu { background: linear-gradient(180deg, #1a150d, #0d0b08); box-shadow: inset 0 0 0 4px #0d0b08, inset 0 0 0 5px rgba(246, 178, 16, .2), 0 10px 30px rgba(0, 0, 0, .7); }
-.fab-menu button[aria-current="true"] { background: linear-gradient(180deg, #ffd25a, #f6b210 55%, #d9960a); }
-.toast { background: linear-gradient(180deg, #ffd25a, #f6b210); box-shadow: 0 0 0 2px #2b2110, 0 8px 20px rgba(0, 0, 0, .6); }
+.mana { display: inline-flex; gap: 3px; align-items: center; }
+.mana svg { width: 16px; height: 16px; display: block; }
+.rar { display: inline-grid; place-items: center; min-width: 30px; height: 24px; padding: 0 8px; border-radius: 999px; color: #111111; font-weight: 800; font-size: 12px; background: var(--brand); }
+.rar.r { background: #e6e6e6; } .rar.u { background: #b8875a; }
+.mesa b { display: grid; place-items: center; width: 36px; height: 36px; margin-top: 2px; border-radius: 50%; background: var(--brand); color: #111111; font-size: 16px; }
+.champ { background: var(--brand); color: #111111; }
+.champ b { color: #111111; }
+.wubrg { display: none; }
+.tv-m { border: 0; border-top: 4px solid var(--brand); border-radius: 16px; }
 </style>
 
 </head>
 <body>
+<header class="band">
+  <div class="band-in">
+    <div class="band-top">
+      <button class="wordmark" id="brand" type="button" aria-label="Magic Drink, início">MAGIC DRINK</button>
+      <nav class="topnav" id="topnav" aria-label="Menu principal"></nav>
+    </div>
+    <div id="band-hero"></div>
+  </div>
+</header>
 <main class="wrap" id="app"></main>
 <nav class="fab-menu" id="nav" aria-label="Menu" hidden></nav>
 <button class="fab" id="fab" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="nav"></button>
@@ -531,6 +539,7 @@ function render() {
   S.pendingRender = false;
   document.body.classList.toggle('tv', S.view === 'telao');
   renderNav();
+  $('#band-hero').innerHTML = S.mode !== 'loading' && (S.view === 'home' || (S.view === 'event' && !ev())) ? bandHero() : '';
   const app = $('#app');
   let html = '';
   if (S.mode === 'loading') html = '<div class="empty">Carregando…</div>';
@@ -559,6 +568,7 @@ function renderNav() {
   items.push(['ranking', 'Ranking']);
   $('#nav').innerHTML = items.map(([v, l]) => `<button data-nav="${v}" aria-current="${S.view === v || (v === 'home' && S.view === 'event' && !S.admin)}">${l}</button>`).join('')
     + (window.MD_AUTH && S.mode === 'db' ? (S.admin ? '<button data-act="logout">Sair</button>' : `<button data-nav="login" aria-current="${S.view === 'login'}">Organizador</button>`) : '');
+  $('#topnav').innerHTML = $('#nav').innerHTML;
   $('#nav').hidden = !S.menuOpen;
   const fab = $('#fab');
   fab.setAttribute('aria-expanded', S.menuOpen ? 'true' : 'false');
@@ -612,7 +622,7 @@ function viewTelao() {
   const last = e.rounds[e.rounds.length - 1];
   const clock = last && last.inicio && e.minutos ? `<span class="clock" data-clock="${last.inicio + e.minutos * 60000}">--:--</span>` : '';
   const champ = champion(e);
-  let h = `<div class="tv-head"><img src="logo-ouro.png" alt="Magic Drink"><div style="flex:1;min-width:0"><div class="eyebrow">${last ? esc(roundTitle(e, last)) : esc(fmtDate(e.data, e.hora))}</div><h1 class="display">${esc(e.nome)}</h1></div>${clock}</div><div class="wubrg" style="border-radius:2px"></div>`;
+  let h = `<div class="tv-head"><img src="logo-laranja.png" alt="Magic Drink" style="border-radius:16px"><div style="flex:1;min-width:0"><div class="eyebrow">${last ? esc(roundTitle(e, last)) : esc(fmtDate(e.data, e.hora))}</div><h1 class="display">${esc(e.nome)}</h1></div>${clock}</div><div class="wubrg" style="border-radius:2px"></div>`;
   if (champ) h += `<div class="champ" style="font-size:28px"><span>Campeão</span><b>${esc(pname(e, champ))}</b></div>`;
   let left;
   if (!last) {
@@ -632,33 +642,31 @@ function viewTelao() {
 }
 
 // ---------- página pública ----------
+function bandHero() {
+  const next = publicEvents().find(e => e.status !== 'encerrado');
+  return `<div class="band-hero"><h1>Embaralhe.<br>Jogue.<br>Brinde.</h1>
+    <div class="lead"><p>Torneios de Magic: The Gathering com inscrição pelo celular, pareamento automático e ranking de todos os eventos.</p>
+    <div class="row">${next ? `<button class="pill-dark" data-open="${next.id}">Ver próximo torneio →</button>` : ''}${S.admin ? '<button class="pill-dark sm" data-act="new-event">Criar evento</button>' : ''}</div></div></div>`;
+}
+function evRow(e) {
+  const open = e.status === 'inscricoes';
+  return `<div class="evrow"><div class="t"><b>${esc(e.nome)}</b><span>${esc(e.formatoNome || '')} · ${esc(fmtDate(e.data, e.hora))}${e.local ? ' · ' + esc(e.local) : ''}</span><div class="row" style="gap:6px">${statusChip(e.status)}${manaPips(e.mana)}</div></div>
+    <button class="btn ${open ? 'primary' : ''}" data-open="${e.id}">${open ? 'Inscrever' : 'Ver evento'}</button></div>`;
+}
 function viewHome() {
   const evs = publicEvents();
   const upcoming = evs.filter(e => e.status !== 'encerrado');
   const past = evs.filter(e => e.status === 'encerrado').reverse();
-  const next = upcoming[0];
-  let h = `<section class="hero">
-    <div class="stack">
-      <div class="hero-brand"><img src="logo-ouro.png" alt="Magic Drink" width="440" height="450">${manaPips(['w', 'u', 'b', 'r', 'g'])}</div>
-      <div class="eyebrow">Comunidade de Magic: The Gathering</div>
-      <h1>Torneios, cartas e drinks</h1>
-      <p>Encontros da comunidade do estado para jogar vários formatos de Magic com regras próprias. Veja os próximos eventos, as regras de cada formato, os pareamentos ao vivo e a classificação.</p>
-      ${S.admin ? `<div class="row"><button class="btn primary" data-act="new-event">Criar evento</button><button class="btn" data-nav="formats">Formatos e regras</button></div>` : ''}
-    </div>
-    <div class="next">${next ? `
-      <div class="eyebrow">Próximo evento</div>
-      <div class="display" style="font-size:22px;font-weight:800">${esc(next.nome)}</div>
-      <div class="muted small">${esc(fmtDate(next.data, next.hora))}</div>
-      <div class="small">${esc(next.local || '')}${next.cidade ? ' · ' + esc(next.cidade) : ''}</div>
-      <div class="row">${statusChip(next.status)}<span class="chip">${esc(next.formatoNome || '')}</span></div>
-      <div><button class="btn primary sm" data-open="${next.id}">Ver evento</button></div>` : `<div class="eyebrow">Próximo evento</div><div class="muted">Nenhum evento publicado ainda.</div>`}
-    </div></section>`;
-  h += installBanner();
-  h += `<section class="stack"><div class="spread"><h2 class="display" style="font-size:22px">Próximos eventos</h2></div>`;
-  h += upcoming.length ? `<div class="grid3">${upcoming.map(evCard).join('')}</div>`
-    : `<div class="empty">${S.admin ? 'Nenhum evento publicado. Crie um evento em Organizar e mude o status para "Inscrições abertas" para ele aparecer aqui.' : 'Nenhum evento aberto no momento. Volte em breve.'}</div>`;
-  h += `</section>`;
-  if (past.length) h += `<section class="stack"><h2 class="display" style="font-size:22px">Eventos anteriores</h2><div class="grid3">${past.map(evCard).join('')}</div></section>`;
+  let h = installBanner();
+  h += `<section class="steps">
+    <div class="step"><span class="n">01</span><h3>Inscreva-se</h3><p>Escolha o evento e entre sem criar conta.</p></div>
+    <div class="step"><span class="n">02</span><h3>Faça check-in</h3><p>Leia o QR code na entrada ao chegar.</p></div>
+    <div class="step"><span class="n">03</span><h3>Jogue e informe</h3><p>Mande o resultado da sua mesa pelo celular.</p></div></section>`;
+  h += `<section class="home-row"><div class="evlist"><h2>Próximos eventos</h2>${upcoming.length ? upcoming.map(evRow).join('')
+    : `<p class="muted" style="margin:8px 0 0">${S.admin ? 'Nenhum evento publicado. Crie um evento em Organizar e mude o status para "Inscrições abertas" para ele aparecer aqui.' : 'Nenhum evento aberto no momento. Volte em breve.'}</p>`}</div>
+    <div class="rankcard"><img src="logo-laranja.png" alt="Magic Drink" width="440" height="450"><div class="stack" style="gap:8px"><span class="k">Ranking geral</span><span style="font-weight:500;font-size:17px">Pontos somados de todos os eventos.</span><button class="rk-go" data-nav="ranking">Ver classificação →</button></div></div></section>`;
+  if (past.length) h += `<section class="evlist"><h2>Eventos anteriores</h2>${past.map(evRow).join('')}</section>`;
+  if (S.admin) h += `<div class="row"><button class="btn" data-nav="formats">Formatos e regras</button></div>`;
   return h;
 }
 // ---------- instalar como app ----------
@@ -678,17 +686,6 @@ window.addEventListener('beforeinstallprompt', ev0 => { ev0.preventDefault(); in
 window.addEventListener('appinstalled', () => { installPrompt = null; render(); });
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
 
-function evCard(e) {
-  const n = seatCount(e), max = +e.vagas || 0;
-  return `<button class="evcard" data-open="${e.id}" style="--id:${idBorder(e.mana)}">
-    <div class="namebar"><h3>${esc(e.nome)}</h3>${manaPips(e.mana)}</div>
-    <div class="row" style="align-items:center;flex-wrap:nowrap">${dateBox(e.data)}
-      <div class="stack" style="gap:4px;min-width:0"><div class="small">${esc(fmtDate(e.data, e.hora))}</div><div class="muted small">${esc(e.local || '')}${e.cidade ? ' · ' + esc(e.cidade) : ''}</div></div></div>
-    <div class="typeline"><span>Torneio — ${esc(e.formatoNome || '')}</span><i class="set" aria-hidden="true"></i></div>
-    <div class="row">${statusChip(e.status)}<span class="chip">${esc((ESTRUTURAS[e.estrutura] || {}).nome || '')}</span></div>
-    ${max ? `<div class="stack" style="gap:4px"><div class="bar"><i style="width:${Math.min(100, n / max * 100)}%"></i></div><div class="small muted num">${n} de ${max} vagas preenchidas</div></div>` : `<div class="small muted num">${n} inscritos</div>`}
-  </button>`;
-}
 
 // ---------- página do evento ----------
 function eventTabs(e) {
@@ -1154,7 +1151,7 @@ const FLYER = { post: { w: 1080, h: 1350, nome: 'Post (4:5)' }, status: { w: 108
 let logoImg = null;
 function loadLogo() {
   if (logoImg) return logoImg;
-  logoImg = new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = 'logo-ouro.png'; });
+  logoImg = new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = 'logo-laranja.png'; });
   return logoImg;
 }
 function wrapLines(ctx, text, maxW, maxLines) {
@@ -1171,38 +1168,33 @@ function wrapLines(ctx, text, maxW, maxLines) {
 async function drawFlyer(canvas, e, kind) {
   const { w: W, h: H } = FLYER[kind] || FLYER.post;
   canvas.width = W; canvas.height = H;
-  try { await Promise.all(['900 80px Cinzel', '700 30px Figtree', '600 40px Figtree', '500 30px "IBM Plex Mono"'].map(f => document.fonts.load(f))); } catch (err) {}
+  try { await Promise.all(['400 80px "Archivo Black"', '700 30px Archivo', '600 40px Archivo', '500 30px "IBM Plex Mono"'].map(f => document.fonts.load(f))); } catch (err) {}
   let logo = null; try { logo = await loadLogo(); } catch (err) {}
   const c = canvas.getContext('2d');
-  const OR = '#f6b210', BK = '#0b0b0b', WH = '#f4f1ec', MU = '#a9a29a';
+  const OR = '#ff8a1f', BK = '#111111', WH = '#f4f1ec', MU = '#a9a29a';
   const pad = 64, inner = W - pad * 2;
   const tall = H >= 1800, square = H <= 1080;
   const sp = v => { try { c.letterSpacing = v; } catch (err) {} };
   c.fillStyle = BK; c.fillRect(0, 0, W, H);
   // faixa da logo
   const topH = tall ? 600 : square ? 300 : 420;
-  const glow = c.createRadialGradient(W / 2, topH / 2, 10, W / 2, topH / 2, W * 0.55);
-  glow.addColorStop(0, '#2a1f08'); glow.addColorStop(1, BK);
-  c.fillStyle = glow; c.fillRect(0, 0, W, topH);
-  const stripe = y => ['#e9dfb9', '#3b82c4', '#8a7d94', '#d24a35', '#2f9a5e'].forEach((col, i) => { c.fillStyle = col; c.fillRect(Math.floor(i * W / 5), y, Math.ceil(W / 5) + 1, 10); });
-  stripe(topH);
+  c.fillStyle = OR; c.fillRect(0, 0, W, topH);
   if (logo) { const lh = topH - (square ? 50 : 70), lw = lh * logo.width / logo.height; c.drawImage(logo, (W - lw) / 2, (topH - lh) / 2, lw, lh); }
   // rodapé
   const footH = square ? 130 : 160, footY = H - footH;
-  c.fillStyle = '#17130b'; c.fillRect(0, footY, W, footH);
-  stripe(footY - 10);
-  c.fillStyle = OR; c.textBaseline = 'alphabetic';
-  sp('4px'); c.font = '700 26px Figtree'; c.fillText('INSCRIÇÕES', pad, footY + 52);
-  c.fillStyle = WH; sp('0px'); c.font = '700 ' + (square ? 46 : 54) + 'px Figtree';
+  c.fillStyle = OR; c.fillRect(0, footY, W, footH);
+  c.fillStyle = BK; c.textBaseline = 'alphabetic';
+  sp('4px'); c.font = '700 26px Archivo'; c.fillText('INSCRIÇÕES', pad, footY + 52);
+  sp('0px'); c.font = '700 ' + (square ? 46 : 54) + 'px Archivo';
   const contato = e.contato || 'Fale com a organização';
   c.fillText(wrapLines(c, contato, inner, 1)[0], pad, footY + (square ? 108 : 118));
   // corpo
   let y = topH + (tall ? 90 : square ? 64 : 76);
-  c.fillStyle = OR; sp('5px'); c.font = '700 26px Figtree';
+  c.fillStyle = OR; sp('5px'); c.font = '700 26px Archivo';
   c.fillText('TORNEIO DE MAGIC: THE GATHERING', pad, y); sp('0px');
   y += tall ? 30 : 18;
   const nameSize = tall ? 96 : square ? 66 : 80;
-  c.font = `900 ${nameSize}px Cinzel`; c.fillStyle = WH;
+  c.font = `400 ${nameSize}px "Archivo Black"`; c.fillStyle = WH;
   wrapLines(c, e.nome, inner, square ? 2 : 3).forEach(l => { y += nameSize * 1.05; c.fillText(l, pad, y); });
   y += tall ? 70 : square ? 34 : 48;
   // data
@@ -1211,17 +1203,17 @@ async function drawFlyer(canvas, e, kind) {
   c.fillStyle = BK; c.textAlign = 'center';
   if (e.data) {
     const [yy, mm, dd] = e.data.split('-').map(Number);
-    c.font = `900 ${square ? 58 : 66}px Cinzel`; c.fillText(String(dd), pad + boxW / 2, y + boxH * 0.58);
-    sp('3px'); c.font = '700 24px Figtree'; c.fillText(MESES[mm - 1].toUpperCase(), pad + boxW / 2, y + boxH * 0.85); sp('0px');
+    c.font = `400 ${square ? 58 : 66}px "Archivo Black"`; c.fillText(String(dd), pad + boxW / 2, y + boxH * 0.58);
+    sp('3px'); c.font = '700 24px Archivo'; c.fillText(MESES[mm - 1].toUpperCase(), pad + boxW / 2, y + boxH * 0.85); sp('0px');
     c.textAlign = 'left';
     const dt = new Date(yy, mm - 1, dd);
-    c.fillStyle = WH; c.font = `600 ${square ? 38 : 42}px Figtree`;
+    c.fillStyle = WH; c.font = `600 ${square ? 38 : 42}px Archivo`;
     c.fillText(DIAS[dt.getDay()].replace(/^./, x => x.toUpperCase()) + (e.hora ? ' · ' + e.hora : ''), pad + boxW + 32, y + boxH * 0.42);
   } else {
-    c.font = '900 56px Cinzel'; c.fillText('?', pad + boxW / 2, y + boxH * 0.62); c.textAlign = 'left';
-    c.fillStyle = WH; c.font = '600 42px Figtree'; c.fillText('Data a definir', pad + boxW + 32, y + boxH * 0.42);
+    c.font = '400 56px "Archivo Black"'; c.fillText('?', pad + boxW / 2, y + boxH * 0.62); c.textAlign = 'left';
+    c.fillStyle = WH; c.font = '600 42px Archivo'; c.fillText('Data a definir', pad + boxW + 32, y + boxH * 0.42);
   }
-  c.fillStyle = MU; c.font = '500 32px Figtree';
+  c.fillStyle = MU; c.font = '500 32px Archivo';
   const onde = [e.local, e.cidade].filter(Boolean).join(', ');
   if (onde) c.fillText(wrapLines(c, onde, inner - boxW - 32, 1)[0], pad + boxW + 32, y + boxH * 0.8);
   y += boxH + (tall ? 80 : square ? 44 : 60);
@@ -1236,16 +1228,16 @@ async function drawFlyer(canvas, e, kind) {
   const colW = (inner - 40) / 2, rowH = square ? 100 : 118;
   info.forEach(([k, v], i) => {
     const x = pad + (i % 2) * (colW + 40), yy = y + Math.floor(i / 2) * rowH;
-    c.fillStyle = OR; sp('4px'); c.font = '700 22px Figtree'; c.fillText(k, x, yy); sp('0px');
-    c.fillStyle = WH; c.font = `600 ${square ? 32 : 36}px Figtree`;
+    c.fillStyle = OR; sp('4px'); c.font = '700 22px Archivo'; c.fillText(k, x, yy); sp('0px');
+    c.fillStyle = WH; c.font = `600 ${square ? 32 : 36}px Archivo`;
     wrapLines(c, v, colW, 1).forEach(l => c.fillText(l, x, yy + (square ? 46 : 52)));
   });
   y += rowH * 2 + (tall ? 40 : 10);
   // premiação, se couber
   const prem = lines(e.premiacao);
   if (prem.length && y + 120 < footY - 30) {
-    c.fillStyle = OR; sp('4px'); c.font = '700 22px Figtree'; c.fillText('PREMIAÇÃO', pad, y); sp('0px');
-    c.fillStyle = WH; c.font = '500 32px Figtree';
+    c.fillStyle = OR; sp('4px'); c.font = '700 22px Archivo'; c.fillText('PREMIAÇÃO', pad, y); sp('0px');
+    c.fillStyle = WH; c.font = '500 32px Archivo';
     const room = Math.floor((footY - 40 - (y + 20)) / 44);
     prem.slice(0, Math.max(1, Math.min(room, 6))).forEach((l, i) => c.fillText(wrapLines(c, l, inner, 1)[0], pad, y + 52 + i * 44));
   }
