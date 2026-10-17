@@ -155,14 +155,14 @@ textarea { min-height: 96px; resize: vertical; line-height: 1.45; }
 .emb-card { padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: 10px; overflow: hidden; transition: transform .15s; }
 .emb-card img { display: block; width: 100%; height: auto; aspect-ratio: 2010 / 2814; }
 .emb-card:hover { transform: translateY(-4px); }
-@media (max-width: 640px) { .emb-grid { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; } .emb-card { flex: 0 0 128px; scroll-snap-align: start; } }
+@media (max-width: 640px) { .emb-grid { gap: 6px; } .emb-card { border-radius: 5px; } }
 .emb-lb .stage img { border-radius: 14px; cursor: zoom-out; }
 .hero { background: var(--surface); border-radius: 14px; padding: 28px; display: grid; align-items: center; }
 .hero h1 { font-family: var(--f-display); font-weight: 900; font-size: clamp(32px, 5vw, 50px); }
 .hero p { margin: 0; max-width: 60ch; }
 .next { background: var(--surface); color: var(--ink); border-radius: 14px; padding: 22px; display: grid; gap: 8px; align-content: start; }
 .next .eyebrow { color: var(--accent); }
-@media (max-width: 760px) { .hero { padding: 20px; } .emblemas { padding: 20px; } }
+@media (max-width: 760px) { .hero { padding: 20px; } .emblemas { padding: 16px; } }
 .mana { display: flex; gap: 6px; }
 .mana i { width: 14px; height: 14px; border-radius: 50%; display: block; }
 
