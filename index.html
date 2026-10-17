@@ -79,6 +79,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.15; }
 body.tv .fab, body.tv .fab-menu { display: none; }
 @media (max-width: 560px) { .brand img { height: 60px; } }
 .top :focus-visible { outline-color: #111111; }
+.top-title { flex: 1 1 0; min-width: 0; font-family: var(--f-display); font-weight: 900; font-variation-settings: "SOFT" 100, "WONK" 0; font-size: clamp(20px, 4.2vw, 40px); line-height: 1.05; color: #111111; }
 
 .wrap { padding-block: 24px 64px; display: grid; gap: 24px; }
 .banner { background: var(--surface); border-radius: var(--r); padding: 10px 14px; font-size: 14px; font-weight: 600; }
@@ -239,6 +240,7 @@ td.r, th.r { text-align: right; }
 <header class="top">
   <div class="top-in">
     <button class="brand" id="brand" type="button" aria-label="Magic Drink, início"><img src="logo-laranja.png" alt="Magic Drink" width="440" height="450"></button>
+    <div class="top-title">Torneios, cartas e drinks</div>
   </div>
 </header>
 <main class="wrap" id="app"></main>
@@ -605,7 +607,6 @@ function viewHome() {
   let h = `<section class="hero">
     <div class="stack">
       <div class="eyebrow">Comunidade de Magic: The Gathering</div>
-      <h1>Torneios, cartas e drinks</h1>
       <p>Encontros da comunidade do estado para jogar vários formatos de Magic com regras próprias. Veja os próximos eventos, as regras de cada formato, os pareamentos ao vivo e a classificação.</p>
       ${S.admin ? `<div class="row"><button class="btn primary" data-act="new-event">Criar evento</button><button class="btn" data-nav="formats">Formatos e regras</button></div>` : ''}
     </div>
