@@ -43,6 +43,9 @@ Abra o site, clique em **Organizador** e entre com o e-mail e a senha do passo 1
 - **Perfil do jogador**: no Ranking, toque no nome do jogador para ver o histórico dele.
 - **Lista de espera**: quando as vagas acabam, quem entra fica na lista de espera e fora dos pareamentos. Se alguém desistir antes da 1ª rodada, o primeiro da fila entra sozinho.
 - **Emblemas e Elixir**: em Configurar, escolha o sorteio de emblemas (um por jogador no evento todo, ou um novo a cada rodada). O emblema aparece no check-in e na mesa do jogador, que marca no celular as habilidades que usou. A 1ª habilidade da partida custa 1 dose, a 2ª custa 2 e a 3ª custa 3. O total vai para a classificação e o telão quando a organização está com o site aberto.
+- **Elixir pela organização**: na aba Rodadas, abra "Elixir" embaixo de cada mesa para marcar ou corrigir as habilidades de cada jogador. A marcação da organização vale mais que a do jogador.
+- **Aviso de nova rodada**: quem está inscrito e com o site aberto recebe um aviso (e o celular vibra) quando sai a mesa dele. O botão "Avisar no celular quando sair minha mesa" libera as notificações.
+- **Relatório do meta**: no menu, "Meta" mostra os decks e comandantes mais jogados, com títulos e aproveitamento, somando todos os eventos. Para o público, entram só os eventos com "Mostrar os decks" ligado.
 - **Agenda**: na página do evento, "Salvar na agenda do celular" baixa um arquivo .ics e "Google Agenda" abre o evento já preenchido.
 - **Conquistas**: o perfil do jogador mostra selos como Campeão, Pódio, Invicto, Veterano e Copo sem fundo.
 

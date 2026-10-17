@@ -167,6 +167,9 @@ textarea { min-height: 96px; resize: vertical; line-height: 1.45; }
 .elixir { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 12px; gap: 8px; }
 .elixir .check { align-items: flex-start; } .elixir .check input { margin-top: 3px; flex: none; }
 .emb-mini { padding: 0; border: 0; background: none; cursor: zoom-in; flex: none; } .emb-mini img { width: 64px; height: auto; display: block; border-radius: 5px; }
+.elx-adm { margin-top: 8px; font-size: 13px; } .elx-adm summary { cursor: pointer; color: var(--muted); }
+.elx-row { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; justify-content: space-between; padding: 6px 0; border-top: 1px solid var(--line); }
+.elx-row .check { font-size: 13px; gap: 4px; }
 .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
 .badge { background: var(--surface-2); border-radius: 12px; padding: 12px 14px; display: grid; gap: 2px; border-left: 4px solid var(--brand); }
 .hero { background: var(--surface); border-radius: 14px; padding: 28px; display: grid; align-items: center; }
@@ -322,7 +325,7 @@ const S = {
   events: {}, formats: {}, regs: {}, myReg: null,
   view: 'home', eventId: null, tab: 'info', formatId: null, newEvent: false,
   installHidden: (() => { try { return sessionStorage.getItem('md-install-hide') === '1'; } catch (e) { return false; } })(),
-  armed: null, pendingRender: false, assets: null, media: [], mediaSub: null, lightbox: null, emblema: null, embPt: false, uploading: '',
+  armed: null, pendingRender: false, assets: null, media: [], mediaSub: null, lightbox: null, emblema: null, embPt: false, elxOpen: null, metaFmt: '', seenRound: {}, uploading: '',
 };
 
 // ---------- armazenamento (db compartilhado, ou local quando indisponível) ----------
@@ -552,6 +555,7 @@ function render() {
     else if (S.view === 'formats' && S.admin) html += viewFormats();
     else if (S.view === 'login' && window.MD_AUTH) html += viewLogin();
     else if (S.view === 'ranking') html += viewRanking();
+    else if (S.view === 'meta') html += viewMeta();
     else if (S.view === 'perfil') html += viewPerfil();
     else if (S.view === 'telao') html += viewTelao();
     else html += viewHome();
@@ -567,7 +571,7 @@ document.addEventListener('focusout', () => setTimeout(() => { if (S.pendingRend
 function renderNav() {
   const items = [['home', 'Eventos']];
   if (S.admin) items.push(['admin', 'Organizar'], ['formats', 'Formatos e regras']);
-  items.push(['ranking', 'Ranking']);
+  items.push(['ranking', 'Ranking'], ['meta', 'Meta']);
   $('#nav').innerHTML = items.map(([v, l]) => `<button data-nav="${v}" aria-current="${S.view === v || (v === 'home' && S.view === 'event' && !S.admin)}">${l}</button>`).join('')
     + (S.admin ? '<button data-act="new-event">Criar evento</button>' : '')
     + (window.MD_AUTH && S.mode === 'db' ? (S.admin ? '<button data-act="logout">Sair</button>' : `<button data-nav="login" aria-current="${S.view === 'login'}">Organizador</button>`) : '');
@@ -637,6 +641,61 @@ function conquistas(key, row, hist) {
   if (mine && mine === top) out.push(['Copo sem fundo', 'Quem mais bebeu Elixir no ranking.']);
   if (hist.some(h => h.e.emblemas && elixirTop(h.e).some(x => x.p.id === h.t.p.id))) out.push(['Rei da noite', 'Quem mais bebeu Elixir em um evento.']);
   return out;
+}
+
+// aviso de nova rodada para quem está inscrito
+function myTableText(e) {
+  const me = myPlayer(e), r = e.rounds[e.rounds.length - 1]; if (!me || !r) return '';
+  const m = r.matches.find(x => x.players.includes(me.id)); if (!m) return '';
+  return `${roundTitle(e, r)}: ` + (m.bye ? 'você tem bye' : m.wait ? 'você avança sem jogar' : `Mesa ${m.mesa} contra ${m.players.filter(x => x !== me.id).map(id => pname(e, id)).join(', ')}`);
+}
+function roundAlerts() {
+  Object.values(S.events).forEach(e => {
+    const n = lastRoundN(e), seen = S.seenRound[e.id]; S.seenRound[e.id] = n;
+    if (seen == null || n <= seen || !myPlayer(e)) return;
+    const txt = myTableText(e); if (!txt) return;
+    toast(txt);
+    try { if (navigator.vibrate) navigator.vibrate([250, 120, 250]); } catch (err) {}
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const opts = { body: txt, icon: 'icons/icon-192.png', tag: 'rodada-' + e.id, renotify: true };
+      (navigator.serviceWorker && navigator.serviceWorker.ready ? navigator.serviceWorker.ready.then(reg => reg.showNotification(e.nome, opts)) : Promise.reject())
+        .catch(() => { try { new Notification(e.nome, opts); } catch (err) {} });
+    }
+  });
+}
+const canNotify = () => 'Notification' in window && Notification.permission === 'default';
+const notifyBtn = e => myPlayer(e) && e.status !== 'encerrado' && canNotify() ? '<button class="btn sm" data-act="notify-on">Avisar no celular quando sair minha mesa</button>' : '';
+
+// ---------- relatório do meta ----------
+function metaRows(fmt) {
+  const rows = {};
+  rankedEvents().filter(e => (S.admin || e.mostrarDecks) && (!fmt || e.formatoNome === fmt)).forEach(e => {
+    const win = eventWinner(e), tot = Object.fromEntries(eventTotals(e).map(t => [t.p.id, t]));
+    e.players.forEach(p => {
+      const k = nameKey(p.deck); if (!k || p.espera) return;
+      const row = rows[k] = rows[k] || { nome: p.deck.trim(), n: 0, titulos: 0, w: 0, l: 0, d: 0, jogadores: new Set() };
+      const t = tot[p.id] || { w: 0, l: 0, d: 0 };
+      row.n++; row.w += t.w; row.l += t.l; row.d += t.d; row.jogadores.add(nameKey(p.nome)); if (win === p.id) row.titulos++;
+    });
+  });
+  return Object.values(rows).sort((a, b) => b.n - a.n || b.titulos - a.titulos || b.w - a.w || a.nome.localeCompare(b.nome));
+}
+function viewMeta() {
+  const fmts = [...new Set(rankedEvents().filter(e => S.admin || e.mostrarDecks).map(e => e.formatoNome).filter(Boolean))].sort();
+  const rows = metaRows(S.metaFmt), total = rows.reduce((t, r) => t + r.n, 0);
+  const wr = r => r.w + r.l + r.d ? Math.round(r.w / (r.w + r.l + r.d) * 100) + '%' : '—';
+  const best = rows.filter(r => r.w + r.l + r.d >= 3).sort((a, b) => b.w / (b.w + b.l + b.d) - a.w / (a.w + a.l + a.d))[0];
+  return `<div class="spread"><div><div class="eyebrow">Onde o meta morre</div><h1 class="display" style="font-size:30px">Relatório do meta</h1></div>
+    ${fmts.length > 1 ? `<select data-metafmt aria-label="Formato" style="width:auto"><option value="">Todos os formatos</option>${fmts.map(f => `<option ${S.metaFmt === f ? 'selected' : ''}>${esc(f)}</option>`).join('')}</select>` : ''}</div>
+    ${rows.length ? `<div class="grid3">
+      <div class="panel stack" style="gap:4px"><span class="eyebrow">Mais jogado</span><b class="display" style="font-size:22px">${esc(rows[0].nome)}</b><span class="muted small">${rows[0].n} ${rows[0].n === 1 ? 'vez' : 'vezes'} · ${Math.round(rows[0].n / total * 100)}% do meta</span></div>
+      ${(() => { const c = rows.slice().sort((a, b) => b.titulos - a.titulos)[0]; return c && c.titulos ? `<div class="panel stack" style="gap:4px"><span class="eyebrow">Mais títulos</span><b class="display" style="font-size:22px">${esc(c.nome)}</b><span class="muted small">${c.titulos} ${c.titulos === 1 ? 'título' : 'títulos'}</span></div>` : ''; })()}
+      ${best ? `<div class="panel stack" style="gap:4px"><span class="eyebrow">Melhor aproveitamento</span><b class="display" style="font-size:22px">${esc(best.nome)}</b><span class="muted small">${wr(best)} das partidas vencidas</span></div>` : ''}
+    </div>
+    <div class="panel" style="padding:0"><div class="tbl-wrap"><table><thead><tr><th>Deck / comandante</th><th class="r">Jogado</th><th class="r">% do meta</th><th class="r">Jogadores</th><th class="r">Títulos</th><th class="r">V-D-E</th><th class="r">Vitórias</th></tr></thead>
+      <tbody>${rows.map(r => `<tr><td><b>${esc(r.nome)}</b></td><td class="r num">${r.n}</td><td class="r num">${Math.round(r.n / total * 100)}%</td><td class="r num">${r.jogadores.size}</td><td class="r num">${r.titulos || ''}</td><td class="r num">${r.w}-${r.l}-${r.d}</td><td class="r num">${wr(r)}</td></tr>`).join('')}</tbody></table></div></div>
+    <p class="small muted" style="margin:0">Soma os decks que os jogadores informaram na inscrição, em todos os eventos já realizados${S.admin ? '' : ' que mostram os decks ao público'}. Decks com o mesmo nome são agrupados.</p>`
+    : `<div class="empty">Ainda não há decks para mostrar. Eles aparecem aqui quando os jogadores informam o deck na inscrição${S.admin ? '' : ' e o evento tem "Mostrar os decks dos jogadores" ligado'}.</div>`}`;
 }
 
 // ---------- telão ----------
@@ -794,6 +853,7 @@ function tabInfo(e) {
           ${e.premiacao ? `<tr><td class="muted">Premiação</td><td style="white-space:pre-wrap">${esc(e.premiacao)}</td></tr>` : ''}
         </tbody></table>
         ${e.data && e.status !== 'encerrado' ? `<div class="row"><button class="btn sm" data-act="ics">Salvar na agenda do celular</button><a class="btn sm" href="${gcalLink(e)}" target="_blank" rel="noopener">Google Agenda</a></div>` : ''}
+        ${!e.rounds.length && notifyBtn(e) ? `<div>${notifyBtn(e)}</div>` : ''}
         ${signup}
       </div>
       ${extras}
@@ -850,7 +910,7 @@ function myTableCard(e, me) {
   return `<div class="panel" style="border-color:var(--gold)"><div class="eyebrow">Sua mesa · rodada ${r.n}</div>
     <div class="display" style="font-size:22px">${m.bye ? 'Bye' : m.wait ? 'Aguardando' : 'Mesa ' + m.mesa}</div>
     <div class="muted">${m.bye ? 'Vitória automática nesta rodada.' : m.wait ? 'Você avança sem jogar nesta rodada.' : 'Contra ' + others.join(', ')}</div>
-    ${!m.bye && !m.wait ? `<div style="margin-top:10px">${m.result ? resultLabel(e, m) : reportInput(e, r, m)}</div>` : ''}${elixirTracker(e, r, m, me)}</div>`;
+    ${!m.bye && !m.wait ? `<div style="margin-top:10px">${m.result ? resultLabel(e, m) : reportInput(e, r, m)}</div>` : ''}${elixirTracker(e, r, m, me)}${notifyBtn(e) ? `<div style="margin-top:10px">${notifyBtn(e)}</div>` : ''}</div>`;
 }
 
 function tabPlayers(e) {
@@ -978,7 +1038,7 @@ function matchRow(e, r, m) {
   else who = `<div class="vs"><span class="pl ${w === m.players[0] ? 'win' : ''}">${esc(pname(e, m.players[0]))}${embDot(e, m.players[0], r.n)}</span><span class="x">vs</span><span class="pl ${w === m.players[1] ? 'win' : ''}">${esc(pname(e, m.players[1]))}${embDot(e, m.players[1], r.n)}</span></div>`;
   const tag = m.bracket ? ({ W: 'Vencedores', L: 'Perdedores', F: 'Grande final' }[m.bracket]) : m.pod ? `Draft ${m.pod}` : '';
   return `<div class="match ${mine ? 'me' : ''}"><div class="mesa">${m.bye || m.wait ? '—' : `Mesa<b>${m.mesa}</b>`}</div>
-    <div style="min-width:0">${tag ? `<div class="small muted">${tag}</div>` : ''}${who}</div>
+    <div style="min-width:0">${tag ? `<div class="small muted">${tag}</div>` : ''}${who}${S.admin && e.emblemas && r === e.rounds[e.rounds.length - 1] && !m.bye && !m.wait ? elixirAdmin(e, r, m) : ''}</div>
     <div class="stack" style="gap:6px;align-items:flex-end">${S.admin ? resultInput(e, r, m) + reportAdmin(e, r, m) : mine && !m.result && !m.bye && !m.wait ? reportInput(e, r, m) : resultLabel(e, m)}</div></div>`;
 }
 function roundTitle(e, r) {
@@ -1128,9 +1188,28 @@ function embDot(e, id, rn) {
 const doses = n => n * (n + 1) / 2;
 const dosesTxt = n => n + (n === 1 ? ' dose' : ' doses');
 const regDoses = r => r && r.elixir ? Object.values(r.elixir).reduce((t, a) => t + doses(a.length), 0) : 0;
+// habilidades usadas numa partida: a marcação da organização vale mais que a do jogador
+function usedFor(e, p, key) {
+  const a = e.elixirAdm && e.elixirAdm[key] && e.elixirAdm[key][p.id]; if (a) return a;
+  const r = regEv(e, p.regUid); return r && r.elixir && r.elixir[key] || [];
+}
+function calcElixir(e, p) {
+  const r = regEv(e, p.regUid), keys = new Set(Object.keys(r && r.elixir || {}));
+  Object.entries(e.elixirAdm || {}).forEach(([k, v]) => { if (v[p.id]) keys.add(k); });
+  let n = 0; keys.forEach(k => n += doses(usedFor(e, p, k).length)); return n;
+}
+function elixirMap(e) { const map = {}; e.players.forEach(p => { const n = calcElixir(e, p); if (n) map[p.id] = n; }); return map; }
 function elixirOf(e, p) {
-  if (S.admin || (S.uid && p.regUid === S.uid)) { const r = regEv(e, p.regUid); if (r && r.elixir) return regDoses(r); }
+  if (S.admin || (S.uid && p.regUid === S.uid)) return calcElixir(e, p);
   return (e.elixir || {})[p.id] || 0;
+}
+function elixirAdmin(e, r, m) {
+  const key = repKey(r, m), rows = m.players.map(id => e.players.find(x => x.id === id)).filter(Boolean);
+  const sum = rows.map(p => `${esc(p.nome)} ${doses(usedFor(e, p, key).length)}`).join(' · ');
+  return `<details class="elx-adm"${S.elxOpen === key ? ' open' : ''} data-elxkey="${key}"><summary>Elixir: ${sum}</summary>${rows.map(p => {
+    const i = emblemIdx(e, p, r.n), used = usedFor(e, p, key), adj = !!(e.elixirAdm && e.elixirAdm[key] && e.elixirAdm[key][p.id]);
+    return `<div class="elx-row"><span class="small"><b>${esc(p.nome)}</b>${embDot(e, p.id, r.n)}${adj ? ' <span class="muted">(ajustado)</span>' : ''}</span><span class="row" style="gap:10px">${[0, 1, 2].map(k => `<label class="check" title="${i == null ? '' : esc(EMBLEMAS[i].hab[k])}"><input type="checkbox" data-elxadm="${key}:${p.id}:${k}" ${used.includes(k) ? 'checked' : ''}>${k + 1}</label>`).join('')}<span class="small muted">${dosesTxt(doses(used.length))}</span></span></div>`;
+  }).join('')}</details>`;
 }
 function elixirTop(e) {
   const rows = e.players.map(p => ({ p, n: elixirOf(e, p) })).filter(x => x.n).sort((a, b) => b.n - a.n);
@@ -1138,11 +1217,11 @@ function elixirTop(e) {
 }
 function elixirTracker(e, r, m, me) {
   const i = emblemIdx(e, me, r.n); if (i == null || m.bye || m.wait) return '';
-  const em = EMBLEMAS[i], used = ((myRegEv(e) || {}).elixir || {})[repKey(r, m)] || [];
+  const em = EMBLEMAS[i], used = usedFor(e, me, repKey(r, m)), adj = !!(e.elixirAdm && e.elixirAdm[repKey(r, m)] && e.elixirAdm[repKey(r, m)][me.id]);
   return `<div class="elixir stack">
     <div class="row" style="align-items:center;flex-wrap:nowrap"><button class="emb-mini" type="button" data-emb="${i}" aria-label="Ver emblema ${em.n}"><img src="emblemas/${em.k}-mini.jpg" alt="" width="400" height="560"></button>
-      <div><div class="eyebrow">Seu emblema ${e.emblemas === 'rodada' ? 'nesta rodada' : 'no evento'}</div><b style="font-size:18px">${em.n}</b><div class="small muted">Marque cada habilidade quando usar.</div></div></div>
-    ${em.hab.map((h, k) => `<label class="check"><input type="checkbox" data-elixir="${r.n}:${m.id}:${k}" ${used.includes(k) ? 'checked' : ''}> <span>${esc(h)}</span></label>`).join('')}
+      <div><div class="eyebrow">Seu emblema ${e.emblemas === 'rodada' ? 'nesta rodada' : 'no evento'}</div><b style="font-size:18px">${em.n}</b><div class="small muted">${adj ? 'A organização ajustou o Elixir desta partida.' : 'Marque cada habilidade quando usar.'}</div></div></div>
+    ${em.hab.map((h, k) => `<label class="check"><input type="checkbox" data-elixir="${r.n}:${m.id}:${k}" ${used.includes(k) ? 'checked' : ''} ${adj ? 'disabled' : ''}> <span>${esc(h)}</span></label>`).join('')}
     <div class="small">Nesta partida: <b>${dosesTxt(doses(used.length))}</b> de Elixir${used.length < 3 ? ` · a próxima habilidade custa ${dosesTxt(used.length + 1)}` : ''}</div></div>`;
 }
 let elixirTimer = null;
@@ -1153,8 +1232,7 @@ function syncElixir() {
     if (!S.admin || !S.canWrite) return;
     Object.values(S.events).forEach(e => {
       if (!e.emblemas || !e.rounds.length) return;
-      const map = {};
-      e.players.forEach(p => { const n = regDoses(regEv(e, p.regUid)); if (n) map[p.id] = n; });
+      const map = elixirMap(e);
       if (JSON.stringify(map) !== JSON.stringify(e.elixir || {})) { const x = clone(e); x.elixir = map; saveEvent(x).catch(() => {}); }
     });
   }, 1500);
@@ -1567,6 +1645,7 @@ document.addEventListener('click', async ev0 => {
     return mutate(e => { const r = e.rounds.find(x => x.n === +rn), m = r && r.matches.find(x => x.id === mid); const v = m && agreedReport(e, r, m); if (!v) return false; m.result = parseResult(v); }).then(() => toast('Resultado confirmado'));
   }
   if (act === 'install') { if (!installPrompt) return; installPrompt.prompt(); try { await installPrompt.userChoice; } catch (err) {} installPrompt = null; render(); return; }
+  if (act === 'notify-on') { try { const r = await Notification.requestPermission(); toast(r === 'granted' ? 'Pronto! Você vai receber um aviso quando sair sua mesa.' : 'Sem permissão para avisos. Você ainda vê a mesa aqui no site.'); } catch (err) {} render(); return; }
   if (act === 'emb-pt') { S.embPt = !S.embPt; render(); return; }
   if (act === 'ics') { const e = ev(); saveFile(new Blob([icsText(e)], { type: 'text/calendar' }), 'magic-drink-' + (e.data || 'evento') + '.ics'); return; }
   if (act === 'install-hide') { S.installHidden = true; try { sessionStorage.setItem('md-install-hide', '1'); } catch (err) {} render(); return; }
@@ -1637,6 +1716,16 @@ document.addEventListener('change', ev0 => {
   const t = ev0.target;
   if (t.dataset.paid) return mutate(e => { const p = e.players.find(x => x.id === t.dataset.paid); p.pago = t.checked; });
   if (t.dataset.checkin) return mutate(e => { const p = e.players.find(x => x.id === t.dataset.checkin); p.checkin = t.checked; });
+  if (t.hasAttribute('data-metafmt')) { S.metaFmt = t.value; render(); return; }
+  if (t.dataset.elxadm) {
+    const [rn, mid, pid, k] = t.dataset.elxadm.split(':'), key = rn + ':' + mid; S.elxOpen = key;
+    return mutate(e => {
+      const p = e.players.find(x => x.id === pid), used = usedFor(e, p, key).filter(x => x !== +k);
+      if (t.checked) used.push(+k); used.sort();
+      e.elixirAdm = e.elixirAdm || {}; e.elixirAdm[key] = Object.assign({}, e.elixirAdm[key], { [pid]: used });
+      e.elixir = elixirMap(e);
+    });
+  }
   if (t.dataset.elixir) {
     const e = ev(), [rn, mid, k] = t.dataset.elixir.split(':'), key = rn + ':' + mid, all = Object.assign({}, (myRegEv(e) || {}).elixir);
     const used = (all[key] || []).filter(x => x !== +k); if (t.checked) used.push(+k); used.sort();
@@ -1767,6 +1856,10 @@ document.addEventListener('submit', async ev0 => {
   }
 });
 
+document.addEventListener('toggle', ev0 => {
+  const d = ev0.target; if (!d.classList || !d.classList.contains('elx-adm')) return;
+  if (d.open) S.elxOpen = d.dataset.elxkey; else if (S.elxOpen === d.dataset.elxkey) S.elxOpen = null;
+}, true);
 document.addEventListener('keydown', k => {
   if (k.key === 'Escape' && S.menuOpen) { S.menuOpen = false; renderNav(); $('#fab').focus(); return; }
   if (k.key === 'Escape' && S.emblema != null) { S.emblema = null; render(); return; }
@@ -1786,7 +1879,7 @@ setInterval(tickClock, 1000);
 
 // ---------- inicialização ----------
 function startWatching() {
-  store.watch('events', d => { S.events = d; render(); });
+  store.watch('events', d => { S.events = d; render(); roundAlerts(); });
   store.watch('formats', d => { S.formats = d; render(); });
   if (S.admin) store.watch('regs', d => { S.regs = d; S.myReg = S.uid ? d[S.uid] || null : null; render(); syncElixir(); });
   else if (S.mode === 'db' && S.uid) S.db.doc('regs/' + S.uid).onSnapshot(s => { S.myReg = s.exists ? clone(s.data()) : null; render(); }, () => {});
