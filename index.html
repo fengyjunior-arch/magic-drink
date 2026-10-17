@@ -619,10 +619,9 @@ function viewHome() {
       <div><button class="btn primary sm" data-open="${next.id}">Ver evento</button></div>` : `<div class="eyebrow">Próximo evento</div><div class="muted">Nenhum evento publicado ainda.</div>`}
     </section></div>`;
   h += installBanner();
-  h += `<section class="stack"><div class="spread"><h2 class="display" style="font-size:22px">Próximos eventos</h2></div>`;
-  h += upcoming.length ? `<div class="grid3">${upcoming.map(evCard).join('')}</div>`
-    : `<div class="empty">${S.admin ? 'Nenhum evento publicado. Crie um evento em Organizar e mude o status para "Inscrições abertas" para ele aparecer aqui.' : 'Nenhum evento aberto no momento. Volte em breve.'}</div>`;
-  h += `</section>`;
+  const others = upcoming.slice(1);
+  if (others.length) h += `<section class="stack"><h2 class="display" style="font-size:22px">Outros eventos</h2><div class="grid3">${others.map(evCard).join('')}</div></section>`;
+  else if (!next && S.admin) h += `<div class="empty">Nenhum evento publicado. Crie um evento em Organizar e mude o status para "Inscrições abertas" para ele aparecer aqui.</div>`;
   if (past.length) h += `<section class="stack"><h2 class="display" style="font-size:22px">Eventos anteriores</h2><div class="grid3">${past.map(evCard).join('')}</div></section>`;
   return h;
 }
