@@ -42,6 +42,9 @@ Abra o site, clique em **Organizador** e entre com o e-mail e a senha do passo 1
 - **Mesas no WhatsApp**: na aba Rodadas, **Copiar mesas** ou **Enviar no WhatsApp** monta a mensagem da rodada para o grupo.
 - **Perfil do jogador**: no Ranking, toque no nome do jogador para ver o histórico dele.
 - **Lista de espera**: quando as vagas acabam, quem entra fica na lista de espera e fora dos pareamentos. Se alguém desistir antes da 1ª rodada, o primeiro da fila entra sozinho.
+- **Emblemas e Elixir**: em Configurar, escolha o sorteio de emblemas (um por jogador no evento todo, ou um novo a cada rodada). O emblema aparece no check-in e na mesa do jogador, que marca no celular as habilidades que usou. A 1ª habilidade da partida custa 1 dose, a 2ª custa 2 e a 3ª custa 3. O total vai para a classificação e o telão quando a organização está com o site aberto.
+- **Agenda**: na página do evento, "Salvar na agenda do celular" baixa um arquivo .ics e "Google Agenda" abre o evento já preenchido.
+- **Conquistas**: o perfil do jogador mostra selos como Campeão, Pódio, Invicto, Veterano e Copo sem fundo.
 
 ## Instalar como app
 

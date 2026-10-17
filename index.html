@@ -157,6 +157,18 @@ textarea { min-height: 96px; resize: vertical; line-height: 1.45; }
 .emb-card:hover { transform: translateY(-4px); }
 @media (max-width: 640px) { .emb-grid { gap: 6px; } .emb-card { border-radius: 5px; } }
 .emb-lb .stage img { border-radius: 14px; cursor: zoom-out; }
+.emb-lb { grid-template-rows: auto minmax(0, 1fr) auto; }
+.emb-view { display: grid; gap: 12px; min-height: 0; grid-template-rows: minmax(0, 1fr); }
+.emb-view.pt { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; }
+.emb-pt { background: #181818; border: 1px solid #333; border-radius: 14px; padding: 16px; overflow: auto; max-height: 100%; }
+.emb-pt p { margin: 8px 0; } .emb-pt ul { margin: 8px 0; padding-left: 20px; display: grid; gap: 6px; }
+@media (max-width: 700px) { .emb-view.pt { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; } .emb-view.pt .stage img { max-height: 34vh; } .emb-pt { max-height: 40vh; } }
+.emb-dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-left: 6px; vertical-align: middle; box-shadow: 0 0 0 1.5px rgba(0,0,0,.6), 0 0 0 3px rgba(255,255,255,.25); }
+.elixir { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 12px; gap: 8px; }
+.elixir .check { align-items: flex-start; } .elixir .check input { margin-top: 3px; flex: none; }
+.emb-mini { padding: 0; border: 0; background: none; cursor: zoom-in; flex: none; } .emb-mini img { width: 64px; height: auto; display: block; border-radius: 5px; }
+.badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.badge { background: var(--surface-2); border-radius: 12px; padding: 12px 14px; display: grid; gap: 2px; border-left: 4px solid var(--brand); }
 .hero { background: var(--surface); border-radius: 14px; padding: 28px; display: grid; align-items: center; }
 .hero h1 { font-family: var(--f-display); font-weight: 900; font-size: clamp(32px, 5vw, 50px); }
 .hero p { margin: 0; max-width: 60ch; }
@@ -310,7 +322,7 @@ const S = {
   events: {}, formats: {}, regs: {}, myReg: null,
   view: 'home', eventId: null, tab: 'info', formatId: null, newEvent: false,
   installHidden: (() => { try { return sessionStorage.getItem('md-install-hide') === '1'; } catch (e) { return false; } })(),
-  armed: null, pendingRender: false, assets: null, media: [], mediaSub: null, lightbox: null, emblema: null, uploading: '',
+  armed: null, pendingRender: false, assets: null, media: [], mediaSub: null, lightbox: null, emblema: null, embPt: false, uploading: '',
 };
 
 // ---------- armazenamento (db compartilhado, ou local quando indisponível) ----------
@@ -442,6 +454,27 @@ async function saveFile(blob, filename) {
   a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
   return true;
 }
+// agenda: arquivo .ics e link do Google Agenda
+const pad2 = n => String(n).padStart(2, '0');
+function evTimes(e) {
+  const [y, mo, d] = e.data.split('-').map(Number), [h, mi] = (e.hora || '14:00').split(':').map(Number);
+  const st = new Date(y, mo - 1, d, h, mi), dur = Math.max(180, ((+e.rodadas || 3) + (+e.topCut ? 2 : 0)) * ((+e.minutos || 50) + 10) + 30);
+  return [st, new Date(st.getTime() + dur * 60000)];
+}
+const icsDate = dt => `${dt.getFullYear()}${pad2(dt.getMonth() + 1)}${pad2(dt.getDate())}T${pad2(dt.getHours())}${pad2(dt.getMinutes())}00`;
+const icsEsc = t => String(t || '').replace(/[\\;,]/g, c => '\\' + c).replace(/\n/g, '\\n');
+const evPlace = e => [e.local, e.cidade].filter(Boolean).join(', ');
+function icsText(e) {
+  const [a, b] = evTimes(e);
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Magic Drink//PT', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT', 'UID:' + e.id + '@magic-drink',
+    'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z', 'DTSTART:' + icsDate(a), 'DTEND:' + icsDate(b),
+    'SUMMARY:' + icsEsc(e.nome), 'LOCATION:' + icsEsc(evPlace(e)), 'DESCRIPTION:' + icsEsc((e.formatoNome || '') + '\n' + eventLink(e)), 'URL:' + eventLink(e),
+    'BEGIN:VALARM', 'TRIGGER:-PT3H', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEsc(e.nome), 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+}
+function gcalLink(e) {
+  const [a, b] = evTimes(e);
+  return 'https://calendar.google.com/calendar/render?' + new URLSearchParams({ action: 'TEMPLATE', text: e.nome, dates: icsDate(a) + '/' + icsDate(b), ctz: 'America/Fortaleza', location: evPlace(e), details: (e.formatoNome || '') + '\n' + eventLink(e) }).toString();
+}
 // mensagem das mesas para o grupo do WhatsApp
 function roundText(e, r) {
   const names = m => m.players.map(id => pname(e, id));
@@ -524,7 +557,7 @@ function render() {
     else html += viewHome();
   }
   app.innerHTML = html;
-  const lbKey = S.emblema != null ? 'emb' + S.emblema : S.lightbox ? S.lightbox + '|' + S.armed + '|' + S.media.length + '|' + S.admin : '';
+  const lbKey = S.emblema != null ? 'emb' + S.emblema + (S.embPt ? 'pt' : '') : S.lightbox ? S.lightbox + '|' + S.armed + '|' + S.media.length + '|' + S.admin : '';
   if (lbKey !== S.lbKey) { S.lbKey = lbKey; $('#lb').innerHTML = S.emblema != null ? emblemaHtml() : S.lightbox ? lightboxHtml() : ''; }
   tickClock();
   if (S.view === 'event' && S.tab === 'divulgar') paintFlyer();
@@ -577,11 +610,33 @@ function viewPerfil() {
   rankedEvents().forEach(e => eventTotals(e).forEach(t => { if (nameKey(t.p.nome) === key) hist.push({ e, t, pl: placement(e, t.p.id) }); }));
   hist.reverse();
   const showDeck = hist.some(h => (S.admin || h.e.mostrarDecks) && h.t.p.deck);
+  const badges = conquistas(key, row, hist);
   return `${back}<div><div class="eyebrow">Jogador · ${pos + 1}º no ranking</div><h1 class="display" style="font-size:30px">${esc(row.nome)}</h1></div>
     <div class="row"><span class="chip gold num">${row.pts} pontos</span><span class="chip num">${row.ev} ${row.ev === 1 ? 'evento' : 'eventos'}</span><span class="chip num">${row.w}-${row.l}-${row.d}</span>${row.titulos ? `<span class="chip open num">${row.titulos} ${row.titulos === 1 ? 'título' : 'títulos'}</span>` : ''}</div>
+    <div class="panel stack"><h3 style="margin:0">Conquistas</h3>${badges.length ? `<div class="badges">${badges.map(([n, d]) => `<div class="badge"><b>${n}</b><span class="small muted">${d}</span></div>`).join('')}</div>` : '<p class="muted" style="margin:0">Nenhuma conquista ainda. Jogue mais um Magic Drink!</p>'}</div>
     <div class="panel" style="padding:0"><div class="tbl-wrap"><table>
     <thead><tr><th>Data</th><th>Evento</th><th>Formato</th>${showDeck ? '<th>Deck</th>' : ''}<th class="r">Colocação</th><th class="r">V-D-E</th><th class="r">Pontos</th></tr></thead>
     <tbody>${hist.map(({ e, t, pl }) => `<tr><td class="num">${e.data ? e.data.split('-').reverse().join('/') : '—'}</td><td><a href="#" data-open="${e.id}"><b>${esc(e.nome)}</b></a></td><td>${esc(e.formatoNome)}</td>${showDeck ? `<td class="muted">${S.admin || e.mostrarDecks ? esc(t.p.deck || '') : ''}</td>` : ''}<td class="r num">${pl === 1 ? '<span class="chip gold">Campeão</span>' : pl ? pl + 'º' : '—'}</td><td class="r num">${t.w}-${t.l}-${t.d}</td><td class="r num"><b>${t.mp}</b></td></tr>`).join('')}</tbody></table></div></div>`;
+}
+
+function elixirByName() {
+  const out = {};
+  rankedEvents().forEach(e => e.players.forEach(p => { const n = elixirOf(e, p), k = nameKey(p.nome); if (n && k) out[k] = (out[k] || 0) + n; }));
+  return out;
+}
+function conquistas(key, row, hist) {
+  const out = [];
+  if (row.titulos) out.push(['Campeão', row.titulos === 1 ? 'Venceu um Magic Drink.' : `Venceu ${row.titulos} Magic Drinks.`]);
+  if (hist.some(h => h.pl === 2 || h.pl === 3)) out.push(['Pódio', 'Terminou um evento entre os 3 primeiros.']);
+  if (hist.some(h => h.t.l === 0 && h.t.w + h.t.d >= 3)) out.push(['Invicto', 'Passou um evento inteiro sem perder.']);
+  if (row.ev >= 10) out.push(['Lenda da casa', 'Jogou 10 eventos ou mais.']);
+  else if (row.ev >= 5) out.push(['Veterano', 'Jogou 5 eventos ou mais.']);
+  else out.push(['Na mesa', row.ev === 1 ? 'Jogou o primeiro Magic Drink.' : `Jogou ${row.ev} Magic Drinks.`]);
+  const el = elixirByName(), mine = el[key] || 0, top = Math.max(0, ...Object.values(el));
+  if (mine) out.push(['Bom de copo', `Bebeu ${dosesTxt(mine)} de Elixir nos eventos.`]);
+  if (mine && mine === top) out.push(['Copo sem fundo', 'Quem mais bebeu Elixir no ranking.']);
+  if (hist.some(h => h.e.emblemas && elixirTop(h.e).some(x => x.p.id === h.t.p.id))) out.push(['Rei da noite', 'Quem mais bebeu Elixir em um evento.']);
+  return out;
 }
 
 // ---------- telão ----------
@@ -599,12 +654,16 @@ function viewTelao() {
       : `<div class="panel"><div class="display" style="font-size:clamp(24px,3vw,44px)">${seatCount(e)} jogadores inscritos</div><div class="muted">As mesas aparecem aqui quando a primeira rodada começar.</div></div>`;
   } else {
     const ms = last.matches.slice().sort((a, b) => (a.bye || a.wait) - (b.bye || b.wait) || (a.mesa || 0) - (b.mesa || 0));
-    left = `<div class="tv-matches">${ms.map(m => `<div class="tv-m ${E.done(m) && !m.bye && !m.wait ? 'done' : ''}"><b class="mesa">${m.bye ? 'Bye' : m.wait ? 'Aguardando' : 'Mesa ' + m.mesa}</b><div>${m.players.map(id => esc(pname(e, id))).join(m.players.length > 2 ? '<br>' : ' <span class="muted">x</span> ')}</div>${m.result ? `<div>${resultLabel(e, m)}</div>` : ''}</div>`).join('')}</div>`;
+    left = `<div class="tv-matches">${ms.map(m => `<div class="tv-m ${E.done(m) && !m.bye && !m.wait ? 'done' : ''}"><b class="mesa">${m.bye ? 'Bye' : m.wait ? 'Aguardando' : 'Mesa ' + m.mesa}</b><div>${m.players.map(id => esc(pname(e, id)) + embDot(e, id, last.n)).join(m.players.length > 2 ? '<br>' : ' <span class="muted">x</span> ')}</div>${m.result ? `<div>${resultLabel(e, m)}</div>` : ''}</div>`).join('')}</div>`;
   }
   let right = '';
   if (e.rounds.length && !isElim(e)) {
     const st = E.standings(e, 'main').filter(s => !s.p.espera).slice(0, 16);
-    right = `<div class="panel tv-st" style="padding:0"><div style="padding:12px 16px"><h3 style="margin:0">Classificação</h3></div><table><tbody>${st.map((s, i) => `<tr><td class="num">${i + 1}</td><td><b>${esc(s.p.nome)}</b></td><td class="r num"><b>${s.mp}</b></td><td class="r num muted">${s.w}-${s.l}-${s.d}</td></tr>`).join('')}</tbody></table></div>`;
+    right = `<div class="panel tv-st" style="padding:0"><div style="padding:12px 16px"><h3 style="margin:0">Classificação</h3></div><table><tbody>${st.map((s, i) => `<tr><td class="num">${i + 1}</td><td><b>${esc(s.p.nome)}</b></td><td class="r num"><b>${s.mp}</b></td><td class="r num muted">${s.w}-${s.l}-${s.d}</td>${e.emblemas ? `<td class="r num muted" title="Doses de Elixir">${elixirOf(e, s.p) || ''}</td>` : ''}</tr>`).join('')}</tbody></table></div>`;
+  }
+  if (e.emblemas && e.rounds.length) {
+    const top = e.players.map(p => ({ p, n: elixirOf(e, p) })).filter(x => x.n).sort((a, b) => b.n - a.n).slice(0, 3);
+    if (top.length) right += `<div class="panel tv-st" style="padding:0;margin-top:12px"><div style="padding:12px 16px"><h3 style="margin:0">Elixir da noite</h3></div><table><tbody>${top.map((x, i) => `<tr><td class="num">${i + 1}</td><td><b>${esc(x.p.nome)}</b></td><td class="r num"><b>${dosesTxt(x.n)}</b></td></tr>`).join('')}</tbody></table></div>`;
   }
   return h + `<div class="tv-grid" style="${right ? '' : 'grid-template-columns:minmax(0,1fr)'}"><div>${left}</div>${right ? `<div>${right}</div>` : ''}</div>
     <button class="btn sm tv-exit" data-tvexit>Sair do telão</button>`;
@@ -734,6 +793,7 @@ function tabInfo(e) {
           <tr><td class="muted">Pontuação</td><td class="num">Vitória ${e.pontos.v} · Empate ${e.pontos.e} · Derrota ${e.pontos.d}</td></tr>
           ${e.premiacao ? `<tr><td class="muted">Premiação</td><td style="white-space:pre-wrap">${esc(e.premiacao)}</td></tr>` : ''}
         </tbody></table>
+        ${e.data && e.status !== 'encerrado' ? `<div class="row"><button class="btn sm" data-act="ics">Salvar na agenda do celular</button><a class="btn sm" href="${gcalLink(e)}" target="_blank" rel="noopener">Google Agenda</a></div>` : ''}
         ${signup}
       </div>
       ${extras}
@@ -756,7 +816,12 @@ function myListBlock(e, me, pending) {
 function checkinBlock(e, me, pending) {
   if (!e.checkinAberto) return '';
   const mine = myRegEv(e) || {};
-  if (me && checkedIn(e, me) || (!me && mine.checkin)) return `<div class="panel"><span class="chip open">Check-in feito${me ? ' · ' + esc(me.nome) : ''}</span></div>`;
+  if (me && checkedIn(e, me) || (!me && mine.checkin)) {
+    const i = me && e.emblemas === 'evento' ? emblemIdx(e, me) : null;
+    const emb = i != null ? `<div class="row" style="align-items:center;flex-wrap:nowrap"><button class="emb-mini" type="button" data-emb="${i}" aria-label="Ver emblema ${EMBLEMAS[i].n}"><img src="emblemas/${EMBLEMAS[i].k}-mini.jpg" alt="" width="400" height="560"></button><div><div class="eyebrow">Seu emblema sorteado</div><b style="font-size:18px">${EMBLEMAS[i].n}</b><div class="small muted">Toque na carta para ver as habilidades.</div></div></div>`
+      : e.emblemas === 'rodada' ? '<div class="small muted">Seu emblema é sorteado a cada rodada e aparece na sua mesa.</div>' : '';
+    return `<div class="panel stack"><span class="chip open" style="justify-self:start">Check-in feito${me ? ' · ' + esc(me.nome) : ''}</span>${emb}</div>`;
+  }
   if (me || pending) return `<div class="panel stack" style="border-color:var(--brand)"><div class="eyebrow">Check-in aberto</div><div>Chegou no evento? Confirme sua presença para entrar nos pareamentos.</div><div><button class="btn primary" data-act="checkin">Fazer check-in</button></div></div>`;
   if (!S.uid || S.admin) return '';
   const opts = e.players.filter(p => !p.dropped).sort((a, b) => a.nome.localeCompare(b.nome));
@@ -785,7 +850,7 @@ function myTableCard(e, me) {
   return `<div class="panel" style="border-color:var(--gold)"><div class="eyebrow">Sua mesa · rodada ${r.n}</div>
     <div class="display" style="font-size:22px">${m.bye ? 'Bye' : m.wait ? 'Aguardando' : 'Mesa ' + m.mesa}</div>
     <div class="muted">${m.bye ? 'Vitória automática nesta rodada.' : m.wait ? 'Você avança sem jogar nesta rodada.' : 'Contra ' + others.join(', ')}</div>
-    ${!m.bye && !m.wait ? `<div style="margin-top:10px">${m.result ? resultLabel(e, m) : reportInput(e, r, m)}</div>` : ''}</div>`;
+    ${!m.bye && !m.wait ? `<div style="margin-top:10px">${m.result ? resultLabel(e, m) : reportInput(e, r, m)}</div>` : ''}${elixirTracker(e, r, m, me)}</div>`;
 }
 
 function tabPlayers(e) {
@@ -908,9 +973,9 @@ function matchRow(e, r, m) {
   let who;
   const editable = S.admin && S.editPairs && r === e.rounds[e.rounds.length - 1];
   if (editable) who = `<div class="pod">${m.players.map((id, i) => swapSel(e, r, m, i)).join('<span class="x muted small" style="align-self:center">vs</span>')}</div>`;
-  else if (m.players.length > 2) who = `<div class="pod">${m.players.map((id, i) => `<span class="${w === id ? 'pl win' : ''}"><small>${i + 1}º</small>${esc(pname(e, id))}</span>`).join('')}</div>`;
-  else if (m.players.length === 1) who = `<div class="vs"><span class="pl">${esc(pname(e, m.players[0]))}</span></div>`;
-  else who = `<div class="vs"><span class="pl ${w === m.players[0] ? 'win' : ''}">${esc(pname(e, m.players[0]))}</span><span class="x">vs</span><span class="pl ${w === m.players[1] ? 'win' : ''}">${esc(pname(e, m.players[1]))}</span></div>`;
+  else if (m.players.length > 2) who = `<div class="pod">${m.players.map((id, i) => `<span class="${w === id ? 'pl win' : ''}"><small>${i + 1}º</small>${esc(pname(e, id))}${embDot(e, id, r.n)}</span>`).join('')}</div>`;
+  else if (m.players.length === 1) who = `<div class="vs"><span class="pl">${esc(pname(e, m.players[0]))}${embDot(e, m.players[0], r.n)}</span></div>`;
+  else who = `<div class="vs"><span class="pl ${w === m.players[0] ? 'win' : ''}">${esc(pname(e, m.players[0]))}${embDot(e, m.players[0], r.n)}</span><span class="x">vs</span><span class="pl ${w === m.players[1] ? 'win' : ''}">${esc(pname(e, m.players[1]))}${embDot(e, m.players[1], r.n)}</span></div>`;
   const tag = m.bracket ? ({ W: 'Vencedores', L: 'Perdedores', F: 'Grande final' }[m.bracket]) : m.pod ? `Draft ${m.pod}` : '';
   return `<div class="match ${mine ? 'me' : ''}"><div class="mesa">${m.bye || m.wait ? '—' : `Mesa<b>${m.mesa}</b>`}</div>
     <div style="min-width:0">${tag ? `<div class="small muted">${tag}</div>` : ''}${who}</div>
@@ -965,10 +1030,12 @@ function tabStandings(e) {
   const me = myPlayer(e);
   const pods = e.estrutura === 'draft' ? [...new Set(e.players.map(p => p.pod).filter(Boolean))].sort((a, b) => a - b) : [];
   const table = (rows, title) => `<div class="panel" style="padding:0">${title ? `<div style="padding:14px 16px"><h3 style="margin:0">${title}</h3></div>` : ''}<div class="tbl-wrap"><table>
-    <thead><tr><th>#</th><th>Jogador</th><th class="r">Pontos</th><th class="r">V-D-E</th>${multi ? '<th class="r" title="Média de pontos por partida dos oponentes">Força oponentes</th>' : '<th class="r" title="Percentual de vitórias em partidas dos oponentes">OMW%</th><th class="r" title="Percentual de vitórias em games">GW%</th><th class="r" title="Percentual de vitórias em games dos oponentes">OGW%</th>'}</tr></thead>
-    <tbody>${rows.map((s, i) => `<tr class="${me && me.id === s.p.id ? 'me' : ''}"><td class="num">${i + 1}</td><td><b>${esc(s.p.nome)}</b>${s.p.dropped ? ' <span class="chip">desistiu</span>' : ''}</td><td class="r num"><b>${s.mp}</b></td><td class="r num">${s.w}-${s.l}-${s.d}</td>
+    <thead><tr><th>#</th><th>Jogador</th><th class="r">Pontos</th><th class="r">V-D-E</th>${e.emblemas ? '<th class="r" title="Doses de Elixir">Elixir</th>' : ''}${multi ? '<th class="r" title="Média de pontos por partida dos oponentes">Força oponentes</th>' : '<th class="r" title="Percentual de vitórias em partidas dos oponentes">OMW%</th><th class="r" title="Percentual de vitórias em games">GW%</th><th class="r" title="Percentual de vitórias em games dos oponentes">OGW%</th>'}</tr></thead>
+    <tbody>${rows.map((s, i) => `<tr class="${me && me.id === s.p.id ? 'me' : ''}"><td class="num">${i + 1}</td><td><b>${esc(s.p.nome)}</b>${s.p.dropped ? ' <span class="chip">desistiu</span>' : ''}</td><td class="r num"><b>${s.mp}</b></td><td class="r num">${s.w}-${s.l}-${s.d}</td>${e.emblemas ? `<td class="r num">${elixirOf(e, s.p) || '—'}</td>` : ''}
     ${multi ? `<td class="r num">${s.sos.toFixed(2).replace('.', ',')}</td>` : `<td class="r num">${pct(s.omw)}</td><td class="r num">${pct(s.gwp)}</td><td class="r num">${pct(s.ogw)}</td>`}</tr>`).join('')}</tbody></table></div></div>`;
-  let h = table(st, pods.length > 1 ? 'Geral' : '');
+  const topEl = e.emblemas ? elixirTop(e) : [];
+  let h = topEl.length ? `<div class="panel row" style="align-items:center"><span class="chip gold">${e.status === 'encerrado' ? 'Copo sem fundo' : 'Quem mais bebeu até agora'}</span><b>${topEl.map(x => esc(x.p.nome)).join(', ')}</b><span class="muted">${dosesTxt(topEl[0].n)} de Elixir</span></div>` : '';
+  h += table(st, pods.length > 1 ? 'Geral' : '');
   if (pods.length > 1) pods.forEach(p => h += table(st.filter(s => s.p.pod === p), `Mesa de draft ${p}`));
   h += `<p class="small muted" style="margin:0">Desempate: ${multi ? 'pontos, força dos oponentes (média de pontos por partida dos adversários) e número de vitórias.' : 'pontos, OMW% (mínimo 33%), GW% e OGW%, como nas regras de torneio da Wizards.'}${+e.topCut && !e.cutSeeds ? ` Os ${E.isMulti(e) ? (+e.podSize || 4) : e.topCut} primeiros vão para ${E.isMulti(e) ? 'a mesa final' : 'o top ' + e.topCut}.` : ''}</p>`;
   return h;
@@ -1039,7 +1106,59 @@ function tabMedia(e) {
   return h;
 }
 const EMBLEMAS = [
-  { k: 'vermelho', n: 'Vermelho' }, { k: 'branco', n: 'Branco' }, { k: 'preto', n: 'Preto' }, { k: 'verde', n: 'Verde' }, { k: 'azul', n: 'Azul' }];
+  { k: 'vermelho', n: 'Vermelho', cor: '#e0503a', hab: ['Causa 3 de dano a qualquer alvo.', 'A criatura alvo recebe +2/+0 e ímpeto até o fim do turno.', 'Exile o card do topo do seu grimório. Você pode jogá-lo até a sua próxima etapa final.'], frase: 'O plano era simples: beber primeiro, pensar nunca.' },
+  { k: 'branco', n: 'Branco', cor: '#f1ead8', hab: ['Previna os próximos 3 de dano que seriam causados a você ou a uma permanente alvo que você controla.', 'A criatura alvo ganha vigilância e vínculo com a vida até o fim do turno.', 'Exile a criatura alvo e depois devolva-a ao campo de batalha sob o controle do dono.'], frase: 'A disciplina falhou depois do primeiro gole.' },
+  { k: 'preto', n: 'Preto', cor: '#9a6bc4', hab: ['O jogador alvo descarta um card.', 'Destrua a criatura alvo.', 'O jogador alvo perde 2 de vida e você ganha 2 de vida.'], frase: 'Um shot para esquecer o medo. Dois para esquecer o bom senso.' },
+  { k: 'verde', n: 'Verde', cor: '#3fa35a', hab: ['A criatura alvo que você controla luta com a criatura alvo que você não controla.', 'A criatura alvo ganha resistência a magia até o fim do turno.', 'Crie uma ficha de criatura 3/1 com alcance e atropelar.'], frase: 'A floresta o avisou… A bebida a calou.' },
+  { k: 'azul', n: 'Azul', cor: '#3a9be0', hab: ['Anule a mágica alvo.', 'Vidência 1.', 'Coloque um marcador de atordoamento na criatura alvo.'], frase: 'Uma única dose… Mil erros.' }];
+const EMB_REGRA = 'Bebida Cumulativa 1: cada habilidade custa uma dose de Elixir e só pode ser usada uma vez por partida.';
+function hashStr(t) { let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+const lastRoundN = e => e.rounds.length ? e.rounds[e.rounds.length - 1].n : 0;
+// emblema sorteado: fixo no evento ou novo a cada rodada. O sorteio sai do id do evento e do jogador, então é igual em todos os aparelhos.
+function emblemIdx(e, p, rn) {
+  if (!e.emblemas || !p || p.espera) return null;
+  if (e.emblemas === 'rodada') { rn = rn || lastRoundN(e); return rn ? hashStr(e.id + ':' + rn + ':' + p.id) % EMBLEMAS.length : null; }
+  return e.rounds.length || checkedIn(e, p) ? hashStr(e.id + ':' + p.id) % EMBLEMAS.length : null;
+}
+function embDot(e, id, rn) {
+  const i = emblemIdx(e, e.players.find(x => x.id === id), rn);
+  return i == null ? '' : `<i class="emb-dot" style="background:${EMBLEMAS[i].cor}" title="Emblema ${EMBLEMAS[i].n}"></i>`;
+}
+// Elixir: a 1ª habilidade da partida custa 1 dose, a 2ª custa 2, a 3ª custa 3
+const doses = n => n * (n + 1) / 2;
+const dosesTxt = n => n + (n === 1 ? ' dose' : ' doses');
+const regDoses = r => r && r.elixir ? Object.values(r.elixir).reduce((t, a) => t + doses(a.length), 0) : 0;
+function elixirOf(e, p) {
+  if (S.admin || (S.uid && p.regUid === S.uid)) { const r = regEv(e, p.regUid); if (r && r.elixir) return regDoses(r); }
+  return (e.elixir || {})[p.id] || 0;
+}
+function elixirTop(e) {
+  const rows = e.players.map(p => ({ p, n: elixirOf(e, p) })).filter(x => x.n).sort((a, b) => b.n - a.n);
+  return rows.length ? rows.filter(x => x.n === rows[0].n) : [];
+}
+function elixirTracker(e, r, m, me) {
+  const i = emblemIdx(e, me, r.n); if (i == null || m.bye || m.wait) return '';
+  const em = EMBLEMAS[i], used = ((myRegEv(e) || {}).elixir || {})[repKey(r, m)] || [];
+  return `<div class="elixir stack">
+    <div class="row" style="align-items:center;flex-wrap:nowrap"><button class="emb-mini" type="button" data-emb="${i}" aria-label="Ver emblema ${em.n}"><img src="emblemas/${em.k}-mini.jpg" alt="" width="400" height="560"></button>
+      <div><div class="eyebrow">Seu emblema ${e.emblemas === 'rodada' ? 'nesta rodada' : 'no evento'}</div><b style="font-size:18px">${em.n}</b><div class="small muted">Marque cada habilidade quando usar.</div></div></div>
+    ${em.hab.map((h, k) => `<label class="check"><input type="checkbox" data-elixir="${r.n}:${m.id}:${k}" ${used.includes(k) ? 'checked' : ''}> <span>${esc(h)}</span></label>`).join('')}
+    <div class="small">Nesta partida: <b>${dosesTxt(doses(used.length))}</b> de Elixir${used.length < 3 ? ` · a próxima habilidade custa ${dosesTxt(used.length + 1)}` : ''}</div></div>`;
+}
+let elixirTimer = null;
+// a organização leva o total de Elixir de cada jogador para o evento, que é público (as inscrições não são)
+function syncElixir() {
+  clearTimeout(elixirTimer);
+  elixirTimer = setTimeout(() => {
+    if (!S.admin || !S.canWrite) return;
+    Object.values(S.events).forEach(e => {
+      if (!e.emblemas || !e.rounds.length) return;
+      const map = {};
+      e.players.forEach(p => { const n = regDoses(regEv(e, p.regUid)); if (n) map[p.id] = n; });
+      if (JSON.stringify(map) !== JSON.stringify(e.elixir || {})) { const x = clone(e); x.elixir = map; saveEvent(x).catch(() => {}); }
+    });
+  }, 1500);
+}
 function emblemasBlock() {
   return `<section class="emblemas">
     <h2 class="display" style="font-size:22px">Emblemas: Elixir's Power</h2>
@@ -1054,7 +1173,9 @@ function emblemaHtml() {
   return `<div class="lightbox emb-lb" role="dialog" aria-label="Emblema ${e.n}">
     <div class="spread"><span class="small">Emblema ${e.n} · ${i + 1} de ${EMBLEMAS.length}</span>
       <div class="row">${i > 0 ? '<button class="btn sm" data-embnav="-1">Anterior</button>' : ''}${i < EMBLEMAS.length - 1 ? '<button class="btn sm" data-embnav="1">Próximo</button>' : ''}<button class="btn sm" data-embclose>Fechar</button></div></div>
-    <div class="stage" data-embclose><img src="emblemas/${e.k}.jpg" alt="Emblema Elixir's Power ${e.n}"></div>
+    <div class="emb-view${S.embPt ? ' pt' : ''}"><div class="stage" data-embclose><img src="emblemas/${e.k}.jpg" alt="Emblema Elixir's Power ${e.n}"></div>
+      ${S.embPt ? `<div class="emb-pt"><div class="eyebrow">Emblema ${e.n} · em português</div><p>${EMB_REGRA}</p><ul>${e.hab.map(h => `<li>${esc(h)}</li>`).join('')}</ul><p><i>“${esc(e.frase)}”</i></p></div>` : ''}</div>
+    <div class="row" style="justify-content:center"><button class="btn sm" data-act="emb-pt">${S.embPt ? 'Ver só a carta' : 'Ver em português'}</button></div>
   </div>`;
 }
 function lightboxHtml() {
@@ -1283,6 +1404,7 @@ function eventForm(e, isNew) {
     <label class="f">Chave Pix para a inscrição<input type="text" id="ef-pix" maxlength="77" value="${v('pixChave', lastPix().pixChave || '')}" placeholder="Telefone como +5583999999999, CPF, e-mail ou aleatória"></label>
     <label class="f">Nome de quem recebe o Pix<input type="text" id="ef-pixnome" maxlength="25" value="${v('pixNome', lastPix().pixNome || '')}"></label>
     <label class="f">Cidade de quem recebe o Pix<input type="text" id="ef-pixcidade" maxlength="15" value="${v('pixCidade', lastPix().pixCidade || '')}"></label>
+    <label class="f wide">Sorteio de emblemas<select id="ef-emblemas">${[['', 'Sem emblemas'], ['evento', 'Um emblema por jogador, o mesmo no evento todo'], ['rodada', 'Novo emblema a cada rodada']].map(([k, l]) => `<option value="${k}" ${(e && e.emblemas || '') === k ? 'selected' : ''}>${l}</option>`).join('')}</select><span class="small muted" style="font-weight:400">O emblema é sorteado no check-in (ou quando a rodada começa) e cada jogador marca no celular o Elixir que usar.</span></label>
     <label class="f wide">Premiação<textarea id="ef-premiacao" placeholder="1º lugar: …">${v('premiacao')}</textarea></label>
     <label class="f wide">Descrição<textarea id="ef-descricao">${v('descricao')}</textarea></label>
     ${isNew ? '' : `<label class="f wide">Regras do evento (uma por linha)<textarea id="ef-regras" style="min-height:160px">${v('regras')}</textarea></label>
@@ -1445,6 +1567,8 @@ document.addEventListener('click', async ev0 => {
     return mutate(e => { const r = e.rounds.find(x => x.n === +rn), m = r && r.matches.find(x => x.id === mid); const v = m && agreedReport(e, r, m); if (!v) return false; m.result = parseResult(v); }).then(() => toast('Resultado confirmado'));
   }
   if (act === 'install') { if (!installPrompt) return; installPrompt.prompt(); try { await installPrompt.userChoice; } catch (err) {} installPrompt = null; render(); return; }
+  if (act === 'emb-pt') { S.embPt = !S.embPt; render(); return; }
+  if (act === 'ics') { const e = ev(); saveFile(new Blob([icsText(e)], { type: 'text/calendar' }), 'magic-drink-' + (e.data || 'evento') + '.ics'); return; }
   if (act === 'install-hide') { S.installHidden = true; try { sessionStorage.setItem('md-install-hide', '1'); } catch (err) {} render(); return; }
   if (act === 'backup') {
     const data = { app: 'magic-drink', versao: 1, exportadoEm: new Date().toISOString(), events: S.events, formats: S.formats, regs: S.regs, media: {} };
@@ -1513,6 +1637,12 @@ document.addEventListener('change', ev0 => {
   const t = ev0.target;
   if (t.dataset.paid) return mutate(e => { const p = e.players.find(x => x.id === t.dataset.paid); p.pago = t.checked; });
   if (t.dataset.checkin) return mutate(e => { const p = e.players.find(x => x.id === t.dataset.checkin); p.checkin = t.checked; });
+  if (t.dataset.elixir) {
+    const e = ev(), [rn, mid, k] = t.dataset.elixir.split(':'), key = rn + ':' + mid, all = Object.assign({}, (myRegEv(e) || {}).elixir);
+    const used = (all[key] || []).filter(x => x !== +k); if (t.checked) used.push(+k); used.sort();
+    if (used.length) all[key] = used; else delete all[key];
+    return saveMyRegEv(e, { elixir: all }).then(ok => { if (ok && t.checked) toast(`Saúde! ${dosesTxt(used.length)} de Elixir por essa habilidade.`); });
+  }
   if (t.dataset.report) {
     const e = ev(), key = t.dataset.report, reports = Object.assign({}, (myRegEv(e) || {}).reports);
     if (t.value) reports[key] = t.value; else delete reports[key];
@@ -1596,7 +1726,7 @@ document.addEventListener('submit', async ev0 => {
     const e = {
       id: E.rid(), nome: readStr('ef-nome'), data: readStr('ef-data'), hora: readStr('ef-hora'), local: readStr('ef-local'), cidade: readStr('ef-cidade'),
       vagas: readNum('ef-vagas'), taxa: readNum('ef-taxa'), contato: readStr('ef-contato'), premiacao: readStr('ef-premiacao'), descricao: readStr('ef-descricao'),
-      pixChave: readStr('ef-pix'), pixNome: readStr('ef-pixnome'), pixCidade: readStr('ef-pixcidade'),
+      pixChave: readStr('ef-pix'), pixNome: readStr('ef-pixnome'), pixCidade: readStr('ef-pixcidade'), emblemas: readStr('ef-emblemas'),
       limiteValor: limitOf(fm, fm.nome), pedirLista: limitOf(fm, fm.nome) > 0,
       formatoId: fm.id, formatoNome: fm.nome, base: fm.base, mana: (BASES[fm.base] || BASES.custom).mana, modo: fm.modo, estrutura: fm.estrutura, bestOf: +fm.bestOf,
       podSize: +fm.podSize || 4, minutos: +fm.minutos || 50, pontos: clone(fm.pontos), regras: fm.regras, banlist: fm.banlist,
@@ -1615,7 +1745,7 @@ document.addEventListener('submit', async ev0 => {
         minutos: readNum('ef-min'), pontos: { v: readNum('ef-pv', 3), e: readNum('ef-pe', 1), d: readNum('ef-pd', 0) }, vagas: readNum('ef-vagas'), taxa: readNum('ef-taxa'),
         contato: readStr('ef-contato'), premiacao: readStr('ef-premiacao'), descricao: readStr('ef-descricao'), regras: $('#ef-regras').value, banlist: $('#ef-banlist').value,
         mostrarDecks: $('#ef-decks').checked, pixChave: readStr('ef-pix'), pixNome: readStr('ef-pixnome'), pixCidade: readStr('ef-pixcidade'),
-        pedirLista: $('#ef-lista').checked, limiteValor: readNum('ef-limite', 0), foraRanking: $('#ef-fora').checked });
+        pedirLista: $('#ef-lista').checked, limiteValor: readNum('ef-limite', 0), foraRanking: $('#ef-fora').checked, emblemas: readStr('ef-emblemas') });
       const rf = readStr('ef-reformato');
       if (rf) {
         const fm = rf.startsWith('base:') ? formatFromBase(rf.slice(5)) : S.formats[rf];
@@ -1658,7 +1788,7 @@ setInterval(tickClock, 1000);
 function startWatching() {
   store.watch('events', d => { S.events = d; render(); });
   store.watch('formats', d => { S.formats = d; render(); });
-  if (S.admin) store.watch('regs', d => { S.regs = d; S.myReg = S.uid ? d[S.uid] || null : null; render(); });
+  if (S.admin) store.watch('regs', d => { S.regs = d; S.myReg = S.uid ? d[S.uid] || null : null; render(); syncElixir(); });
   else if (S.mode === 'db' && S.uid) S.db.doc('regs/' + S.uid).onSnapshot(s => { S.myReg = s.exists ? clone(s.data()) : null; render(); }, () => {});
 }
 // links diretos: #evento/<id> e #checkin/<id>
