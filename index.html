@@ -66,21 +66,18 @@ h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.15; }
 .brand { display: block; background: none; border: 0; padding: 0; cursor: pointer; }
 .brand img { height: 76px; width: auto; display: block; }
 @media (max-width: 560px) { .brand img { height: 60px; } }
-.top-in { flex-wrap: nowrap; }
-.nav { display: flex; gap: 4px; flex-wrap: nowrap; margin-left: auto; min-width: 0; }
-.nav button { background: none; border: 0; padding: 7px 12px; border-radius: 999px; cursor: pointer; color: #111111; font-weight: 700; white-space: nowrap; }
-@media (max-width: 560px) {
-  .top-in { gap: 8px; }
-  .brand img { height: 52px; }
-  .nav { gap: 0; }
-  .nav button { padding: 6px 7px; font-size: 12.5px; }
-  .nav .lg { display: none; }
-}
-@media (max-width: 400px) { .top-in { gap: 6px; } .brand img { height: 46px; } .nav button { padding: 5px 5px; font-size: 12px; } }
-@media (max-width: 350px) { .brand img { height: 40px; } .nav button { padding: 4px 4px; font-size: 11px; } }
-.nav button[aria-current="true"] { background: #111111; color: var(--brand); }
-.nav button:hover { background: rgba(17, 17, 17, .12); }
-.nav button[aria-current="true"]:hover { background: #111111; }
+/* menu em botão flutuante */
+.fab { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 15; width: 60px; height: 60px; border-radius: 50%; border: 2px solid #111111; background: var(--brand); color: #111111; display: grid; place-items: center; cursor: pointer; box-shadow: 0 6px 18px rgba(0, 0, 0, .55); }
+.fab svg { width: 28px; height: 28px; }
+.fab:focus-visible { outline: 3px solid #ffffff; outline-offset: 3px; }
+.fab-menu { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(88px + env(safe-area-inset-bottom, 0px)); z-index: 15; min-width: 220px; display: flex; flex-direction: column; gap: 2px; padding: 8px; background: #111111; border: 1px solid var(--brand); border-radius: 14px; box-shadow: 0 10px 30px rgba(0, 0, 0, .6); }
+.fab-menu[hidden] { display: none; }
+.fab-menu button { background: none; border: 0; text-align: left; padding: 12px 14px; border-radius: 10px; color: var(--ink); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+.fab-menu button:hover { background: #222222; }
+.fab-menu button[aria-current="true"] { background: var(--brand); color: #111111; }
+#app { padding-bottom: 96px; }
+body.tv .fab, body.tv .fab-menu { display: none; }
+@media (max-width: 560px) { .brand img { height: 60px; } }
 .top :focus-visible { outline-color: #111111; }
 
 .wrap { padding-block: 24px 64px; display: grid; gap: 24px; }
@@ -230,7 +227,7 @@ td.r, th.r { text-align: right; }
 .flyer-wrap { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
 #flyer { width: min(100%, 360px); height: auto; border-radius: 8px; border: 1px solid var(--line); background: #0b0b0b; }
 .empty { text-align: center; padding: 36px 16px; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--r); }
-.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--brand); color: #111111; box-shadow: 0 0 0 2px #111111; padding: 10px 16px; border-radius: 8px; font-weight: 600; z-index: 20; max-width: calc(100% - 32px); }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(90px + env(safe-area-inset-bottom, 0px)); background: var(--brand); color: #111111; box-shadow: 0 0 0 2px #111111; padding: 10px 16px; border-radius: 8px; font-weight: 600; z-index: 20; max-width: calc(100% - 32px); }
 .pre { white-space: pre-wrap; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 14px; font-size: 14px; max-height: 420px; overflow: auto; }
 .list-plain { list-style: none; margin: 0; padding: 0; }
 .list-plain li { padding: 8px 0; border-bottom: 1px solid var(--line); }
@@ -242,10 +239,11 @@ td.r, th.r { text-align: right; }
 <header class="top">
   <div class="top-in">
     <button class="brand" id="brand" type="button" aria-label="Magic Drink, início"><img src="logo-laranja.png" alt="Magic Drink" width="440" height="450"></button>
-    <nav class="nav" id="nav"></nav>
   </div>
 </header>
 <main class="wrap" id="app"></main>
+<nav class="fab-menu" id="nav" aria-label="Menu" hidden></nav>
+<button class="fab" id="fab" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="nav"></button>
 <div id="lb"></div>
 <div class="toast" id="toast" hidden></div>
 
@@ -522,10 +520,17 @@ document.addEventListener('focusout', () => setTimeout(() => { if (S.pendingRend
 
 function renderNav() {
   const items = [['home', 'Eventos']];
-  if (S.admin) items.push(['admin', 'Organizar'], ['formats', 'Formatos<span class="lg"> e regras</span>']);
+  if (S.admin) items.push(['admin', 'Organizar'], ['formats', 'Formatos e regras']);
   items.push(['ranking', 'Ranking']);
   $('#nav').innerHTML = items.map(([v, l]) => `<button data-nav="${v}" aria-current="${S.view === v || (v === 'home' && S.view === 'event' && !S.admin)}">${l}</button>`).join('')
     + (window.MD_AUTH && S.mode === 'db' ? (S.admin ? '<button data-act="logout">Sair</button>' : `<button data-nav="login" aria-current="${S.view === 'login'}">Organizador</button>`) : '');
+  $('#nav').hidden = !S.menuOpen;
+  const fab = $('#fab');
+  fab.setAttribute('aria-expanded', S.menuOpen ? 'true' : 'false');
+  fab.setAttribute('aria-label', S.menuOpen ? 'Fechar menu' : 'Abrir menu');
+  fab.innerHTML = S.menuOpen
+    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>'
+    : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';
 }
 function viewLogin() {
   return `<div class="panel stack" style="max-width:420px;width:100%;justify-self:center"><h3 style="margin:0" class="display">Área do organizador</h3>
@@ -1349,6 +1354,8 @@ function readList(e) {
 }
 
 document.addEventListener('click', async ev0 => {
+  if (ev0.target.closest('#fab')) { S.menuOpen = !S.menuOpen; renderNav(); if (S.menuOpen) { const b = $('#nav button'); if (b) b.focus(); } return; }
+  if (S.menuOpen) { S.menuOpen = false; renderNav(); }
   const t = ev0.target.closest('[data-nav],[data-open],[data-tab],[data-act],[data-approve],[data-drop],[data-editfmt],[data-copy],[data-lightbox],[data-lbnav],[data-lbclose],[data-perfil],[data-tvexit],#brand');
   if (!t) return;
   if (t.id === 'brand') { S.view = 'home'; render(); return; }
@@ -1600,7 +1607,10 @@ document.addEventListener('submit', async ev0 => {
   }
 });
 
-document.addEventListener('keydown', k => { if (k.key === 'Escape' && S.lightbox) { S.lightbox = null; render(); } });
+document.addEventListener('keydown', k => {
+  if (k.key === 'Escape' && S.menuOpen) { S.menuOpen = false; renderNav(); $('#fab').focus(); return; }
+  if (k.key === 'Escape' && S.lightbox) { S.lightbox = null; render(); }
+});
 
 // relógio da rodada: só atualiza o texto
 function tickClock() {
