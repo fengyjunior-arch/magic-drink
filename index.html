@@ -45,7 +45,7 @@
   color: var(--ink); border: 1px solid #2a2a2a;
 }
 /* cartão laranja dentro de um bloco preto */
-.hero .next {
+.next {
   --surface: #f6b210; --surface-2: rgba(255, 255, 255, .28); --ink: #111111; --muted: rgba(17, 17, 17, .72); --line: rgba(17, 17, 17, .25);
   --accent: #111111; --accent-soft: rgba(17, 17, 17, .12); --btnp-bg: #111111; --btnp-fg: #f6b210; --ok: #0b5a31; --ok-soft: rgba(255, 255, 255, .4);
 }
@@ -146,12 +146,13 @@ textarea { min-height: 96px; resize: vertical; line-height: 1.45; }
 .check { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; cursor: pointer; }
 
 /* abertura da divulgação: bloco laranja com o próximo evento num cartão preto */
-.hero { background: var(--surface); border-radius: 14px; padding: 28px; display: grid; gap: 24px; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); align-items: center; }
+.home-top { display: grid; gap: 16px; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); align-items: stretch; }
+.hero { background: var(--surface); border-radius: 14px; padding: 28px; display: grid; align-items: center; }
 .hero h1 { font-family: var(--f-display); font-weight: 900; font-size: clamp(32px, 5vw, 50px); }
 .hero p { margin: 0; max-width: 60ch; }
-.hero .next { background: var(--surface); color: var(--ink); border-radius: var(--r); padding: 18px; display: grid; gap: 8px; align-content: start; }
-.hero .next .eyebrow { color: var(--accent); }
-@media (max-width: 760px) { .hero { grid-template-columns: 1fr; padding: 20px; } }
+.next { background: var(--surface); color: var(--ink); border-radius: 14px; padding: 22px; display: grid; gap: 8px; align-content: start; }
+.next .eyebrow { color: var(--accent); }
+@media (max-width: 760px) { .home-top { grid-template-columns: 1fr; } .hero { padding: 20px; } }
 .mana { display: flex; gap: 6px; }
 .mana i { width: 14px; height: 14px; border-radius: 50%; display: block; }
 
@@ -604,19 +605,19 @@ function viewHome() {
   const upcoming = evs.filter(e => e.status !== 'encerrado');
   const past = evs.filter(e => e.status === 'encerrado').reverse();
   const next = upcoming[0];
-  let h = `<section class="hero">
+  let h = `<div class="home-top"><section class="hero">
     <div class="stack">
       <p>O torneio mais caótico e lendário da comunidade, onde sua habilidade de jogar é tão importante quanto sua resistência ao Elixir Sagrado.</p>
       ${S.admin ? `<div class="row"><button class="btn primary" data-act="new-event">Criar evento</button><button class="btn" data-nav="formats">Formatos e regras</button></div>` : ''}
-    </div>
-    <div class="next">${next ? `
+    </div></section>
+    <section class="next">${next ? `
       <div class="eyebrow">Próximo evento</div>
       <div class="display" style="font-size:22px;font-weight:800">${esc(next.nome)}</div>
       <div class="muted small">${esc(fmtDate(next.data, next.hora))}</div>
       <div class="small">${esc(next.local || '')}${next.cidade ? ' · ' + esc(next.cidade) : ''}</div>
       <div class="row">${statusChip(next.status)}<span class="chip">${esc(next.formatoNome || '')}</span></div>
       <div><button class="btn primary sm" data-open="${next.id}">Ver evento</button></div>` : `<div class="eyebrow">Próximo evento</div><div class="muted">Nenhum evento publicado ainda.</div>`}
-    </div></section>`;
+    </section></div>`;
   h += installBanner();
   h += `<section class="stack"><div class="spread"><h2 class="display" style="font-size:22px">Próximos eventos</h2></div>`;
   h += upcoming.length ? `<div class="grid3">${upcoming.map(evCard).join('')}</div>`
