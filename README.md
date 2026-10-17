@@ -31,11 +31,20 @@ O site é feito só de arquivos estáticos e fica no GitHub Pages. Os dados fica
 
 Abra o site, clique em **Organizador** e entre com o e-mail e a senha do passo 1.4. Os formatos e o evento que já existiam no app antigo foram copiados pelo `setup.sql`.
 
+## No dia do evento
+
+- **Check-in**: na aba Jogadores, clique em **Abrir check-in** e deixe o QR code na entrada. Quem chega lê o código e confirma presença. Antes da 1ª rodada, tire dos pareamentos quem não fez check-in.
+- **Resultados**: cada jogador informa o resultado da própria mesa pelo celular. Quando os dois lados informam o mesmo resultado (ou só um informou), aparece o botão para confirmar. Se informarem resultados diferentes, a mesa fica marcada para você decidir.
+- **Pix**: preencha a chave Pix no evento. O jogador inscrito vê o QR code com o valor da inscrição e avisa quando pagou; você confirma na coluna Pago.
+- **Lista do deck**: em Configurar, marque "Pedir a lista do deck" e, para Duel Commander 500, o valor máximo. A inscrição pede a lista e o valor total pela LigaMagic e recusa valores acima do limite.
+- **Ranking**: soma os pontos de todos os eventos da temporada (por padrão, o ano do evento). Cada evento pode ficar fora do ranking em Configurar.
+
 ## Arquivos
 
 | Arquivo | O que faz |
 | --- | --- |
 | `index.html` | O app inteiro: telas, estilos e lógica da interface |
+| `qrcode.js` | Gerador de QR code (biblioteca qrcode-generator, licença MIT) |
 | `engine.js` | Pareamentos e chaves: suíço, eliminatória simples e dupla, todos contra todos, pods de Commander e de draft, classificação com desempates |
 | `backend.js` | Ligação com o Supabase: dados, login, fotos e vídeos, e salvar o flyer |
 | `config.js` | Endereço e chave pública do seu projeto Supabase |

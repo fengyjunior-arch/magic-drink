@@ -70,7 +70,8 @@ h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.15; }
   .nav button { padding: 6px 7px; font-size: 12.5px; }
   .nav .lg { display: none; }
 }
-@media (max-width: 350px) { .nav button { padding: 5px 5px; font-size: 11.5px; } .brand img { height: 44px; } }
+@media (max-width: 400px) { .top-in { gap: 6px; } .brand img { height: 46px; } .nav button { padding: 5px 5px; font-size: 12px; } }
+@media (max-width: 350px) { .brand img { height: 40px; } .nav button { padding: 4px 4px; font-size: 11px; } }
 .nav button[aria-current="true"] { background: #111111; color: var(--brand); }
 .nav button:hover { background: rgba(17, 17, 17, .12); }
 .nav button[aria-current="true"]:hover { background: #111111; }
@@ -105,6 +106,16 @@ h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.15; }
 .chip.live { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
 .chip.draft { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
 .chip.gold { background: var(--gold-soft); color: var(--gold); border-color: transparent; }
+.chip.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+.qr { background: #ffffff; padding: 8px; border-radius: 10px; width: 210px; max-width: 100%; }
+.qr svg { display: block; width: 100%; height: auto; }
+.qr-box { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+.qr-box > .stack { flex: 1 1 220px; min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.qr-box .chip, .report .chip { white-space: normal; }
+.report { font-size: 12px; text-align: right; }
+.report select { font-size: 13px; }
+details > summary { cursor: pointer; font-weight: 700; }
+.listbox { white-space: pre-wrap; font-size: 12px; max-height: 260px; overflow: auto; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px; margin-top: 6px; min-width: 200px; }
 .pip { width: 9px; height: 9px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,.15); }
 
 label.f { display: grid; gap: 4px; font-size: 13px; font-weight: 600; color: var(--muted); min-width: 0; }
@@ -220,6 +231,7 @@ td.r, th.r { text-align: right; }
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
 <script src="engine.js"></script>
+<script src="qrcode.js"></script>
 <script src="backend.js"></script>
 <script>
 const E = ENGINE;
@@ -328,8 +340,84 @@ const ev = () => S.events[S.eventId];
 const isElim = e => e.estrutura === 'single' || e.estrutura === 'double';
 function myPlayer(e) { return S.uid ? e.players.find(p => p.regUid === S.uid) : null; }
 function pendingFor(e) {
-  return Object.entries(S.regs).filter(([uid, r]) => r.eventos && r.eventos[e.id] && !e.players.some(p => p.regUid === uid))
-    .map(([uid, r]) => ({ uid, nome: r.nome, contato: r.contato, deck: r.eventos[e.id].deck, em: r.eventos[e.id].em }));
+  return Object.entries(S.regs).filter(([uid, r]) => r.eventos && r.eventos[e.id] && r.eventos[e.id].em && !e.players.some(p => p.regUid === uid))
+    .map(([uid, r]) => { const x = r.eventos[e.id]; return { uid, nome: r.nome, contato: r.contato, deck: x.deck, em: x.em, lista: x.lista, valor: x.valor, pix: !!x.pagoInformado }; });
+}
+
+// dados que o próprio jogador grava na inscrição dele (regs/<uid>)
+function regOf(uid) { return !uid ? null : uid === S.uid ? S.myReg : S.regs[uid]; }
+function regEv(e, uid) { const r = regOf(uid); return r && r.eventos && r.eventos[e.id] || null; }
+const myRegEv = e => S.myReg && S.myReg.eventos && S.myReg.eventos[e.id] || null;
+async function saveMyRegEv(e, patch, nome) {
+  const r = clone(S.myReg || { eventos: {} }); r.eventos = r.eventos || {};
+  if (nome && !r.nome) r.nome = nome;
+  r.eventos[e.id] = Object.assign({}, r.eventos[e.id], patch);
+  S.myReg = r; render();
+  try { await store.save('regs', S.uid, r); return true; } catch (err) { return false; }
+}
+// check-in: marcado pela organização, ou feito pelo jogador (pelo QR code)
+function checkedIn(e, p) {
+  if (p.checkin != null) return !!p.checkin;
+  const r = regEv(e, p.regUid); if (r && r.checkin) return true;
+  return Object.values(S.regs).some(x => x.eventos && x.eventos[e.id] && x.eventos[e.id].checkinPlayer === p.id);
+}
+// lista do deck e valor (LigaMagic)
+const limitOf = (x, nome) => x.limiteValor != null && x.limiteValor !== '' ? +x.limiteValor : (x.base === 'duelcommander' && /500/.test(nome || '') ? 500 : 0);
+const evLimit = e => limitOf(e, e.formatoNome);
+const needList = e => e.pedirLista != null ? !!e.pedirLista : evLimit(e) > 0;
+function deckInfo(e, p) { const r = regEv(e, p.regUid); return { lista: r && r.lista != null ? r.lista : p.lista || '', valor: r && r.valor != null ? r.valor : p.valor }; }
+const brl = v => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
+function valorChip(e, v) {
+  if (v == null || v === '') return '<span class="chip draft">sem valor</span>';
+  const lim = evLimit(e);
+  return `<span class="chip ${lim && +v > lim ? 'bad' : 'open'} num">${brl(v)}${lim && +v > lim ? ' · acima do limite' : ''}</span>`;
+}
+// pagamento informado pelo jogador
+function payInformed(e, p) { const r = regEv(e, p.regUid); return !!(r && r.pagoInformado); }
+// Pix copia e cola (BR Code estático do Banco Central)
+function crc16(s) { let c = 0xFFFF; for (let i = 0; i < s.length; i++) { c ^= s.charCodeAt(i) << 8; for (let j = 0; j < 8; j++) c = c & 0x8000 ? ((c << 1) ^ 0x1021) & 0xFFFF : (c << 1) & 0xFFFF; } return c.toString(16).toUpperCase().padStart(4, '0'); }
+function pixPayload(e) {
+  const chave = String(e.pixChave || '').trim().replace(/\s/g, '');
+  if (!chave || !(+e.taxa > 0)) return '';
+  const f = (id, v) => id + String(v.length).padStart(2, '0') + v;
+  const clean = (t, n) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9 .-]/g, '').trim().toUpperCase().slice(0, n);
+  const txid = ('MD' + e.id).replace(/[^A-Za-z0-9]/g, '').slice(0, 25);
+  const p = f('00', '01') + f('26', f('00', 'br.gov.bcb.pix') + f('01', chave)) + f('52', '0000') + f('53', '986') + f('54', (+e.taxa).toFixed(2)) + f('58', 'BR')
+    + f('59', clean(e.pixNome, 25) || 'MAGIC DRINK') + f('60', clean(e.pixCidade, 15) || 'BRASIL') + f('62', f('05', txid)) + '6304';
+  return p + crc16(p);
+}
+function qrSvg(text) {
+  if (typeof qrcode !== 'function' || !text) return '';
+  const q = qrcode(0, 'M'); q.addData(text); q.make();
+  return `<div class="qr">${q.createSvgTag({ cellSize: 4, margin: 2, scalable: true })}</div>`;
+}
+const eventLink = (e, kind = 'evento') => location.origin + location.pathname + '#' + kind + '/' + e.id;
+// ranking da temporada
+const seasonOf = e => String(e.temporada || (e.data || '').slice(0, 4) || 'Sem data');
+const nameKey = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/\s+/g, ' ');
+const rankedEvents = () => sortedEvents().filter(e => e.status !== 'rascunho' && !e.foraRanking && e.rounds.length);
+function eventWinner(e) {
+  const c = champion(e); if (c) return c;
+  if (e.status !== 'encerrado' || isElim(e) || e.cutSeeds) return null;
+  const st = E.standings(e, 'main'); return st[0] ? st[0].p.id : null;
+}
+function seasonTable(season) {
+  const rows = {};
+  rankedEvents().filter(e => seasonOf(e) === season).forEach(e => {
+    const tot = {};
+    ['main', 'elim', 'final'].forEach(st => {
+      if (!E.stageRounds(e, st).length) return;
+      E.standings(e, st).forEach(s => { const t = tot[s.p.id] = tot[s.p.id] || { p: s.p, mp: 0, w: 0, l: 0, d: 0 }; t.mp += s.mp; t.w += s.w; t.l += s.l; t.d += s.d; });
+    });
+    const win = eventWinner(e);
+    Object.values(tot).forEach(t => {
+      if (!t.w && !t.l && !t.d) return;
+      const k = nameKey(t.p.nome); if (!k) return;
+      const row = rows[k] = rows[k] || { nome: t.p.nome, pts: 0, ev: 0, w: 0, l: 0, d: 0, titulos: 0 };
+      row.pts += t.mp; row.ev++; row.w += t.w; row.l += t.l; row.d += t.d; if (win === t.p.id) row.titulos++;
+    });
+  });
+  return Object.values(rows).sort((a, b) => b.pts - a.pts || b.titulos - a.titulos || b.w - a.w || a.ev - b.ev || a.nome.localeCompare(b.nome));
 }
 
 async function saveEvent(e) { S.events[e.id] = e; render(); await store.save('events', e.id, e); }
@@ -357,6 +445,7 @@ function render() {
     else if (S.view === 'admin' && S.admin) html += viewAdmin();
     else if (S.view === 'formats' && S.admin) html += viewFormats();
     else if (S.view === 'login' && window.MD_AUTH) html += viewLogin();
+    else if (S.view === 'ranking') html += viewRanking();
     else html += viewHome();
   }
   app.innerHTML = html;
@@ -370,6 +459,7 @@ document.addEventListener('focusout', () => setTimeout(() => { if (S.pendingRend
 function renderNav() {
   const items = [['home', 'Eventos']];
   if (S.admin) items.push(['admin', 'Organizar'], ['formats', 'Formatos<span class="lg"> e regras</span>']);
+  items.push(['ranking', 'Ranking']);
   $('#nav').innerHTML = items.map(([v, l]) => `<button data-nav="${v}" aria-current="${S.view === v || (v === 'home' && S.view === 'event' && !S.admin)}">${l}</button>`).join('')
     + (window.MD_AUTH && S.mode === 'db' ? (S.admin ? '<button data-act="logout">Sair</button>' : `<button data-nav="login" aria-current="${S.view === 'login'}">Organizador</button>`) : '');
 }
@@ -381,6 +471,22 @@ function viewLogin() {
       <div><button class="btn primary" type="submit">Entrar</button></div>
     </form>${S.loginMsg ? `<p class="small" style="margin:0;color:var(--brand)">${esc(S.loginMsg)}</p>` : ''}
     <p class="small muted" style="margin:0">Jogadores não precisam entrar. A inscrição é feita direto na página do evento.</p></div>`;
+}
+
+// ---------- ranking da temporada ----------
+function viewRanking() {
+  const seasons = [...new Set(rankedEvents().map(seasonOf))].sort().reverse();
+  const season = seasons.includes(S.season) ? S.season : seasons[0];
+  let h = `<div class="spread"><div><div class="eyebrow">Temporada${season ? ' ' + esc(season) : ''}</div><h1 class="display" style="font-size:28px">Ranking Magic Drink</h1></div>
+    ${seasons.length > 1 ? `<select id="rk-season" aria-label="Temporada" style="width:auto">${seasons.map(x => `<option ${x === season ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>` : ''}</div>`;
+  if (!season) return h + `<div class="empty">O ranking aparece quando o primeiro evento da temporada tiver resultados.</div>`;
+  const rows = seasonTable(season);
+  const evs = rankedEvents().filter(e => seasonOf(e) === season);
+  h += `<div class="panel" style="padding:0"><div class="tbl-wrap"><table>
+    <thead><tr><th>#</th><th>Jogador</th><th class="r">Pontos</th><th class="r">Eventos</th><th class="r">V-D-E</th><th class="r">Títulos</th></tr></thead>
+    <tbody>${rows.map((r, i) => `<tr><td class="num">${i < 3 ? `<span class="chip gold">${i + 1}º</span>` : i + 1}</td><td><b>${esc(r.nome)}</b></td><td class="r num"><b>${r.pts}</b></td><td class="r num">${r.ev}</td><td class="r num">${r.w}-${r.l}-${r.d}</td><td class="r num">${r.titulos || ''}</td></tr>`).join('')}</tbody></table></div></div>
+    <p class="small muted" style="margin:0">Soma dos pontos de todas as partidas dos ${evs.length} ${evs.length === 1 ? 'evento' : 'eventos'} da temporada, com a pontuação de cada evento, incluindo top e mesa final. Desempate: títulos, vitórias e menos eventos jogados. O jogador é identificado pelo nome, então use sempre o mesmo nome nas inscrições.</p>`;
+  return h;
 }
 
 // ---------- página pública ----------
@@ -468,12 +574,14 @@ function tabInfo(e) {
         <label class="f">Seu nome ou apelido<input type="text" id="su-nome" required maxlength="60" value="${esc(S.myReg && S.myReg.nome || '')}"></label>
         <label class="f">WhatsApp ou Instagram<input type="text" id="su-contato" maxlength="80" value="${esc(S.myReg && S.myReg.contato || '')}"></label>
         <label class="f wide">${E.isMulti(e) ? 'Comandante / deck' : 'Deck que vai jogar'} (opcional)<input type="text" id="su-deck" maxlength="80"></label>
+        ${listFields(e, null)}
         <div class="wide"><button class="btn primary" type="submit">Quero participar</button> <span class="small muted">Só a organização vê seu contato.</span></div>
       </form>`;
     else signup = `<p class="muted small" style="margin:0">Para se inscrever, fale com a organização${e.contato ? ': <b class="mono">' + esc(e.contato) + '</b>' : ''}.</p>`;
   }
   const regras = lines(e.regras), ban = lines(e.banlist);
-  return `<div class="grid2">
+  const extras = e.status === 'encerrado' ? '' : checkinBlock(e, me, myPending) + pixBlock(e, me, myPending) + myListBlock(e, me, myPending);
+  return `${me && e.rounds.length ? myTableCard(e, me) : ''}<div class="grid2">
     <div class="stack">
       ${e.descricao ? `<div class="panel"><p style="margin:0;white-space:pre-wrap">${esc(e.descricao)}</p></div>` : ''}
       <div class="panel rules"><h3>Regras do evento</h3>${regras.length ? `<ol>${regras.map(r => `<li>${esc(r)}</li>`).join('')}</ol>` : '<p class="muted" style="margin:0">Regras ainda não publicadas.</p>'}</div>
@@ -493,9 +601,46 @@ function tabInfo(e) {
         </tbody></table>
         ${signup}
       </div>
-      ${me && e.rounds.length ? myTableCard(e, me) : ''}
+      ${extras}
     </div>
   </div>`;
+}
+function listFields(e, cur) {
+  const lim = evLimit(e);
+  if (!needList(e) && !lim) return '';
+  return `<label class="f wide">Lista do deck (uma carta por linha)${needList(e) ? '' : ' (opcional)'}<textarea id="su-lista" maxlength="6000" ${needList(e) ? 'required' : ''} placeholder="1 Sol Ring&#10;1 Command Tower&#10;…">${esc(cur && cur.lista || '')}</textarea></label>
+    ${lim ? `<label class="f">Valor total do deck na LigaMagic (R$)<input type="number" id="su-valor" min="0" step="0.01" required value="${esc(cur && cur.valor != null ? cur.valor : '')}"></label>
+    <p class="small muted wide" style="margin:0">Limite deste evento: ${brl(lim)}, somando o menor preço de cada carta na LigaMagic. A organização confere a lista antes do evento.</p>` : ''}`;
+}
+function myListBlock(e, me, pending) {
+  if ((!needList(e) && !evLimit(e)) || (!me && !pending) || e.rounds.length) return '';
+  const cur = me ? deckInfo(e, me) : myRegEv(e) || {};
+  return `<div class="panel"><details ${cur.lista ? '' : 'open'}><summary>Sua lista do deck${cur.valor != null && cur.valor !== '' ? ' · ' + brl(cur.valor) : ''}</summary>
+    <form class="form" id="my-list" style="margin-top:10px">${listFields(e, cur)}<div class="wide"><button class="btn primary" type="submit">Salvar lista</button></div></form></details></div>`;
+}
+function checkinBlock(e, me, pending) {
+  if (!e.checkinAberto) return '';
+  const mine = myRegEv(e) || {};
+  if (me && checkedIn(e, me) || (!me && mine.checkin)) return `<div class="panel"><span class="chip open">Check-in feito${me ? ' · ' + esc(me.nome) : ''}</span></div>`;
+  if (me || pending) return `<div class="panel stack" style="border-color:var(--brand)"><div class="eyebrow">Check-in aberto</div><div>Chegou no evento? Confirme sua presença para entrar nos pareamentos.</div><div><button class="btn primary" data-act="checkin">Fazer check-in</button></div></div>`;
+  if (!S.uid || S.admin) return '';
+  const opts = e.players.filter(p => !p.dropped).sort((a, b) => a.nome.localeCompare(b.nome));
+  if (!opts.length) return '';
+  return `<div class="panel stack" style="border-color:var(--brand)"><div class="eyebrow">Check-in aberto</div>
+    <div class="small">Não achamos sua inscrição neste aparelho. Escolha seu nome na lista.</div>
+    <div class="row"><select id="ci-player" aria-label="Seu nome" style="width:auto;max-width:100%"><option value="">Seu nome…</option>${opts.map(p => `<option value="${p.id}">${esc(p.nome)}</option>`).join('')}</select><button class="btn primary" data-act="checkin-name">Fazer check-in</button></div></div>`;
+}
+function pixBlock(e, me, pending) {
+  const code = pixPayload(e);
+  if (!code || (!me && !pending)) return '';
+  if (me && me.pago) return `<div class="panel"><span class="chip open">Pagamento confirmado</span></div>`;
+  const informed = (myRegEv(e) || {}).pagoInformado;
+  return `<div class="panel stack"><div class="eyebrow">Pague a inscrição com Pix · ${brl(e.taxa)}</div>
+    <div class="qr-box">${qrSvg(code)}<div class="stack" style="gap:8px">
+      <div class="small muted">Aponte a câmera do app do banco para o QR code, ou copie o código abaixo e use "Pix copia e cola".</div>
+      <div class="pre small mono" id="copy-pix" style="word-break:break-all;max-height:110px">${esc(code)}</div>
+      <div class="row"><button class="btn sm" data-copy="pix">Copiar código Pix</button>${informed ? '<span class="chip gold">Pagamento informado. A organização vai confirmar.</span>' : '<button class="btn sm primary" data-act="paid-informed">Já paguei</button>'}</div>
+      ${e.pixNome ? `<div class="small muted">Recebedor: ${esc(e.pixNome)}</div>` : ''}</div></div></div>`;
 }
 function myTableCard(e, me) {
   const r = e.rounds[e.rounds.length - 1];
@@ -504,7 +649,8 @@ function myTableCard(e, me) {
   const others = m.players.filter(x => x !== me.id).map(id => esc(pname(e, id)));
   return `<div class="panel" style="border-color:var(--gold)"><div class="eyebrow">Sua mesa · rodada ${r.n}</div>
     <div class="display" style="font-size:22px">${m.bye ? 'Bye' : m.wait ? 'Aguardando' : 'Mesa ' + m.mesa}</div>
-    <div class="muted">${m.bye ? 'Vitória automática nesta rodada.' : m.wait ? 'Você avança sem jogar nesta rodada.' : 'Contra ' + others.join(', ')}</div></div>`;
+    <div class="muted">${m.bye ? 'Vitória automática nesta rodada.' : m.wait ? 'Você avança sem jogar nesta rodada.' : 'Contra ' + others.join(', ')}</div>
+    ${!m.bye && !m.wait ? `<div style="margin-top:10px">${m.result ? resultLabel(e, m) : reportInput(e, r, m)}</div>` : ''}</div>`;
 }
 
 function tabPlayers(e) {
@@ -519,24 +665,45 @@ function tabPlayers(e) {
         ${started ? '<p class="small muted" style="margin:0">Jogadores adicionados depois do início entram a partir da próxima rodada.</p>' : ''}
       </div>
       <div class="panel stack"><h3 style="margin:0">Inscrições pela página (${pend.length})</h3>
-        ${pend.length ? `<ul class="list-plain">${pend.map(p => `<li class="spread"><div style="min-width:0"><b>${esc(p.nome)}</b> <span class="muted small">${esc(p.deck || '')}</span><div class="small mono muted">${esc(p.contato || '')}</div></div>
+        ${pend.length ? `<ul class="list-plain">${pend.map(p => `<li class="spread"><div style="min-width:0"><b>${esc(p.nome)}</b> <span class="muted small">${esc(p.deck || '')}</span><div class="small mono muted">${esc(p.contato || '')}</div>
+          ${p.pix ? '<span class="chip gold">informou Pix</span> ' : ''}${evLimit(e) ? valorChip(e, p.valor) : ''}${p.lista ? `<details><summary class="small">ver lista</summary><div class="listbox">${esc(p.lista)}</div></details>` : ''}</div>
           <div class="row"><button class="btn sm primary" data-approve="${p.uid}">Aprovar</button>${armBtn('reject:' + p.uid, 'Recusar', 'Confirmar')}</div></li>`).join('')}</ul>`
         : '<p class="muted small" style="margin:0">Nenhuma inscrição pendente. Quem tiver acesso de colaborador ao app pode se inscrever pela página do evento.</p>'}
       </div></div>`;
   }
+  if (S.admin) h += checkinAdmin(e);
   if (!e.players.length) return h + `<div class="empty">Nenhum jogador inscrito ainda.</div>`;
   const showDeck = S.admin || e.mostrarDecks;
+  const showCheck = S.admin && (e.checkinAberto || e.players.some(p => checkedIn(e, p)));
+  const showList = S.admin && (needList(e) || evLimit(e) > 0);
   const draft = e.estrutura === 'draft' && e.players.some(p => p.pod);
   const paid = e.players.filter(p => p.pago).length;
   h += `<div class="panel" style="padding:0"><div class="spread" style="padding:14px 16px"><h3 style="margin:0">Lista de jogadores</h3>${S.admin && +e.taxa ? `<span class="chip gold num">${paid} de ${e.players.length} pagos</span>` : ''}</div><div class="tbl-wrap"><table>
-    <thead><tr><th>#</th><th>Jogador</th>${showDeck ? '<th>Deck</th>' : ''}${draft ? '<th>Mesa de draft</th>' : ''}${S.admin ? '<th>Pago</th><th>Situação</th><th></th>' : ''}</tr></thead><tbody>
+    <thead><tr><th>#</th><th>Jogador</th>${showDeck ? '<th>Deck</th>' : ''}${showList ? '<th>Lista</th>' : ''}${draft ? '<th>Mesa de draft</th>' : ''}${showCheck ? '<th>Check-in</th>' : ''}${S.admin ? '<th>Pago</th><th>Situação</th><th></th>' : ''}</tr></thead><tbody>
     ${e.players.map((p, i) => `<tr class="${myPlayer(e) && myPlayer(e).id === p.id ? 'me' : ''}"><td class="num muted">${i + 1}</td><td>${S.admin ? `<input type="text" id="pn-${p.id}" data-pname="${p.id}" value="${esc(p.nome)}" maxlength="60" aria-label="Nome" style="min-width:140px">` : `<b>${esc(p.nome)}</b>`}${p.dropped ? ' <span class="chip">desistiu</span>' : ''}</td>
-      ${showDeck ? (S.admin ? `<td><input type="text" id="pd-${p.id}" data-pdeck="${p.id}" value="${esc(p.deck || '')}" maxlength="80" aria-label="Deck" style="min-width:140px"></td>` : `<td class="muted">${esc(p.deck || '')}</td>`) : ''}${draft ? `<td class="num">${p.pod ? `Mesa ${p.pod} · assento ${p.assento}` : '—'}</td>` : ''}
-      ${S.admin ? `<td><label class="check"><input type="checkbox" data-paid="${p.id}" ${p.pago ? 'checked' : ''}> <span class="sr">${p.pago ? 'Sim' : 'Não'}</span></label></td>
+      ${showDeck ? (S.admin ? `<td><input type="text" id="pd-${p.id}" data-pdeck="${p.id}" value="${esc(p.deck || '')}" maxlength="80" aria-label="Deck" style="min-width:140px"></td>` : `<td class="muted">${esc(p.deck || '')}</td>`) : ''}${showList ? `<td>${listCell(e, p)}</td>` : ''}${draft ? `<td class="num">${p.pod ? `Mesa ${p.pod} · assento ${p.assento}` : '—'}</td>` : ''}
+      ${showCheck ? `<td><label class="check"><input type="checkbox" data-checkin="${p.id}" ${checkedIn(e, p) ? 'checked' : ''}> <span class="sr">${checkedIn(e, p) ? 'Sim' : 'Não'}</span></label></td>` : ''}
+      ${S.admin ? `<td><label class="check"><input type="checkbox" data-paid="${p.id}" ${p.pago ? 'checked' : ''}> <span class="sr">${p.pago ? 'Sim' : 'Não'}</span></label>${!p.pago && payInformed(e, p) ? ' <span class="chip gold">informou</span>' : ''}</td>
       <td><button class="btn sm" data-drop="${p.id}">${p.dropped ? 'Reativar' : 'Desistência'}</button></td>
       <td>${e.rounds.some(r => r.matches.some(m => m.players.includes(p.id))) ? '' : armBtn('rm:' + p.id, 'Remover', 'Confirmar')}</td>` : ''}</tr>`).join('')}
     </tbody></table></div></div>`;
   return h;
+}
+
+function listCell(e, p) {
+  const d = deckInfo(e, p);
+  return `<div class="stack" style="gap:4px">${evLimit(e) ? valorChip(e, d.valor) : ''}${d.lista ? `<details><summary class="small">ver lista</summary><div class="listbox">${esc(d.lista)}</div></details>` : '<span class="small muted">sem lista</span>'}</div>`;
+}
+function checkinAdmin(e) {
+  const act = e.players.filter(p => !p.dropped), done = act.filter(p => checkedIn(e, p)).length;
+  if (!e.checkinAberto) return `<div class="panel spread"><div class="stack" style="gap:2px"><b>Check-in no dia do evento</b><span class="small muted">Os jogadores confirmam presença lendo um QR code na entrada. Quem não fizer check-in pode sair dos pareamentos antes da 1ª rodada.</span></div><button class="btn" data-act="checkin-open">Abrir check-in</button></div>`;
+  const link = eventLink(e, 'checkin');
+  return `<div class="panel qr-box">${qrSvg(link)}<div class="stack" style="gap:8px">
+    <h3 style="margin:0">Check-in aberto</h3>
+    <div class="num"><b>${done}</b> de ${act.length} jogadores confirmaram presença</div>
+    <div class="small muted">Deixe este QR code na entrada. O jogador lê com a câmera do celular e toca em "Fazer check-in". Você também pode marcar a presença na coluna Check-in.</div>
+    <div class="small mono muted" id="copy-checkin" style="word-break:break-all">${esc(link)}</div>
+    <div class="row"><button class="btn sm" data-copy="checkin">Copiar link</button><button class="btn sm" data-act="checkin-close">Fechar check-in</button>${done < act.length ? armBtn('drop-absent', `Tirar ${act.length - done} sem check-in dos pareamentos`, 'Confirmar') : ''}</div></div></div>`;
 }
 
 function resultLabel(e, m) {
@@ -547,10 +714,39 @@ function resultLabel(e, m) {
   if (m.result.draw) return '<span class="chip">Empate</span>';
   return `<span class="chip ${m.result.a === m.result.b ? '' : 'open'} num">${m.result.a}-${m.result.b}${m.result.d ? '-' + m.result.d : ''}</span>`;
 }
-function resultInput(e, r, m) {
-  if (m.bye || m.wait) return resultLabel(e, m);
+const resultValue = res => res ? (res.winner ? 'w:' + res.winner : res.draw ? 'draw' : `${res.a}-${res.b}-${res.d || 0}`) : '';
+function parseResult(v) {
+  if (!v) return null; if (v === 'draw') return { draw: true }; if (v.startsWith('w:')) return { winner: v.slice(2) };
+  const [a, b, d] = v.split('-').map(Number); return { a, b, d };
+}
+const repKey = (r, m) => r.n + ':' + m.id;
+// resultados informados pelos próprios jogadores da mesa (ficam na inscrição de cada um)
+function reportsFor(e, r, m) {
+  const valid = resultOptions(e, r, m).map(o => o[0]), out = [];
+  m.players.forEach(id => {
+    const p = e.players.find(x => x.id === id); if (!p || !p.regUid) return;
+    const x = regEv(e, p.regUid), v = x && x.reports && x.reports[repKey(r, m)];
+    if (v && valid.includes(v)) out.push({ p, v });
+  });
+  return out;
+}
+function agreedReport(e, r, m) { const reps = reportsFor(e, r, m); return reps.length && reps.every(x => x.v === reps[0].v) ? reps[0].v : null; }
+const optLabel = (e, r, m, v) => { const o = resultOptions(e, r, m).find(x => x[0] === v); return o ? o[1] : v; };
+function reportInput(e, r, m) {
+  if (r !== e.rounds[e.rounds.length - 1] || !S.uid) return resultLabel(e, m);
+  const mine = (myRegEv(e) || {}).reports || {}, v = mine[repKey(r, m)] || '';
+  return `<div class="report stack" style="gap:4px"><select data-report="${r.n}:${m.id}" aria-label="Informar resultado da sua mesa"><option value="">Informar resultado…</option>${resultOptions(e, r, m).map(([k, l]) => `<option value="${esc(k)}" ${k === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
+    <span class="muted">${v ? 'Enviado. Aguardando a organização confirmar.' : 'Informe o resultado quando a partida terminar.'}</span></div>`;
+}
+function reportAdmin(e, r, m) {
+  if (m.result || m.bye || m.wait) return '';
+  const reps = reportsFor(e, r, m); if (!reps.length) return '';
+  const ok = agreedReport(e, r, m);
+  return `<div class="report stack" style="gap:4px">${reps.map(x => `<span>${esc(x.p.nome)} informou: <b>${esc(optLabel(e, r, m, x.v))}</b></span>`).join('')}
+    ${ok ? `<div><button class="btn sm primary" data-act="confirm:${r.n}:${m.id}">Confirmar</button></div>` : '<span class="chip bad">Resultados diferentes</span>'}</div>`;
+}
+function resultOptions(e, r, m) {
   const elim = r.stage === 'elim' || isElim(e);
-  const val = m.result ? (m.result.winner ? 'w:' + m.result.winner : m.result.draw ? 'draw' : `${m.result.a}-${m.result.b}-${m.result.d || 0}`) : '';
   let opts;
   if (m.players.length > 2) opts = m.players.map(id => [`w:${id}`, `Vitória de ${pname(e, id)}`]).concat(elim ? [] : [['draw', 'Empate (todos)']]);
   else {
@@ -560,6 +756,11 @@ function resultInput(e, r, m) {
       : [['1-0-0', `Vitória de ${a}`], ['0-1-0', `Vitória de ${b}`], ['0-0-1', 'Empate']];
     opts = elim ? list.filter(([v]) => { const [x, y] = v.split('-').map(Number); return x !== y; }) : list;
   }
+  return opts;
+}
+function resultInput(e, r, m) {
+  if (m.bye || m.wait) return resultLabel(e, m);
+  const val = resultValue(m.result), opts = resultOptions(e, r, m);
   return `<select data-result="${r.n}:${m.id}" aria-label="Resultado da mesa ${m.mesa}"><option value="">Resultado…</option>${opts.map(([v, l]) => `<option value="${esc(v)}" ${v === val ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
 }
 function swapSel(e, r, m, i) {
@@ -578,7 +779,7 @@ function matchRow(e, r, m) {
   const tag = m.bracket ? ({ W: 'Vencedores', L: 'Perdedores', F: 'Grande final' }[m.bracket]) : m.pod ? `Draft ${m.pod}` : '';
   return `<div class="match ${mine ? 'me' : ''}"><div class="mesa">${m.bye || m.wait ? '—' : `Mesa<b>${m.mesa}</b>`}</div>
     <div style="min-width:0">${tag ? `<div class="small muted">${tag}</div>` : ''}${who}</div>
-    <div>${S.admin ? resultInput(e, r, m) : resultLabel(e, m)}</div></div>`;
+    <div class="stack" style="gap:6px;align-items:flex-end">${S.admin ? resultInput(e, r, m) + reportAdmin(e, r, m) : mine && !m.result && !m.bye && !m.wait ? reportInput(e, r, m) : resultLabel(e, m)}</div></div>`;
 }
 function roundTitle(e, r) {
   if (r.stage === 'final') return 'Mesa final';
@@ -600,6 +801,7 @@ function tabRounds(e) {
         ${e.estrutura === 'draft' && !e.rounds.length ? `<button class="btn" data-act="draft-pods">${e.players.some(p => p.pod) ? 'Sortear mesas de draft de novo' : 'Sortear mesas de draft'}</button>` : ''}
         ${canCut ? `<button class="btn primary" data-act="cut">${E.isMulti(e) ? 'Gerar mesa final' : `Iniciar top ${e.topCut}`}</button>` : ''}
         ${!finished && !canCut ? `<button class="btn primary" data-act="next-round" ${e.estrutura === 'draft' && !e.players.some(p => p.pod) ? 'disabled' : ''}>${e.rounds.length ? 'Gerar próxima rodada' : 'Gerar 1ª rodada'}</button>` : ''}
+        ${last && !E.roundDone(last) && last.matches.filter(m => !E.done(m) && agreedReport(e, last, m)).length ? `<button class="btn primary" data-act="confirm-all">${(n => n === 1 ? 'Confirmar 1 resultado informado' : `Confirmar ${n} resultados informados`)(last.matches.filter(m => !E.done(m) && agreedReport(e, last, m)).length)}</button>` : ''}
         ${e.rounds.length ? `<button class="btn" data-act="edit-pairs">${S.editPairs ? 'Concluir edição das mesas' : 'Editar mesas'}</button>` : ''}
         ${e.rounds.length ? armBtn('undo-round', 'Desfazer última rodada', 'Confirmar desfazer') : ''}
       </div></div>`;
@@ -769,6 +971,7 @@ function promoText(e) {
     regras.length ? `\nRegras principais:\n${regras.slice(0, 6).map(r => '• ' + r).join('\n')}${regras.length > 6 ? '\n• e mais no link do evento' : ''}` : '',
     '',
     e.contato ? `Inscrições: ${e.contato}` : 'Inscrições abertas. Chame a organização.',
+    window.MD_CONFIG && window.MD_CONFIG.supabaseUrl ? `Inscreva-se pelo site: ${eventLink(e)}` : '',
   ].filter(x => x !== '').join('\n').replace(/\n{3,}/g, '\n\n');
 }
 function resultText(e) {
@@ -920,14 +1123,22 @@ function eventForm(e, isNew) {
     <label class="f">Vagas<input type="number" id="ef-vagas" min="0" max="512" value="${v('vagas', 32)}"></label>
     <label class="f">Inscrição (R$)<input type="number" id="ef-taxa" min="0" step="0.5" value="${v('taxa', 0)}"></label>
     <label class="f">Contato para inscrições<input type="text" id="ef-contato" maxlength="80" value="${v('contato')}" placeholder="WhatsApp ou @instagram"></label>
+    <label class="f">Chave Pix para a inscrição<input type="text" id="ef-pix" maxlength="77" value="${v('pixChave', lastPix().pixChave || '')}" placeholder="Telefone como +5583999999999, CPF, e-mail ou aleatória"></label>
+    <label class="f">Nome de quem recebe o Pix<input type="text" id="ef-pixnome" maxlength="25" value="${v('pixNome', lastPix().pixNome || '')}"></label>
+    <label class="f">Cidade de quem recebe o Pix<input type="text" id="ef-pixcidade" maxlength="15" value="${v('pixCidade', lastPix().pixCidade || '')}"></label>
     <label class="f wide">Premiação<textarea id="ef-premiacao" placeholder="1º lugar: …">${v('premiacao')}</textarea></label>
     <label class="f wide">Descrição<textarea id="ef-descricao">${v('descricao')}</textarea></label>
     ${isNew ? '' : `<label class="f wide">Regras do evento (uma por linha)<textarea id="ef-regras" style="min-height:160px">${v('regras')}</textarea></label>
     <label class="f wide">Cartas banidas ou restritas (uma por linha)<textarea id="ef-banlist">${v('banlist')}</textarea></label>
-    <label class="check wide"><input type="checkbox" id="ef-decks" ${e.mostrarDecks ? 'checked' : ''}> Mostrar os decks dos jogadores na página pública</label>`}
+    <label class="check wide"><input type="checkbox" id="ef-decks" ${e.mostrarDecks ? 'checked' : ''}> Mostrar os decks dos jogadores na página pública</label>
+    <label class="check wide"><input type="checkbox" id="ef-lista" ${needList(e) ? 'checked' : ''}> Pedir a lista do deck na inscrição</label>
+    <label class="f">Valor máximo do deck em R$ (0 = sem limite)<input type="number" id="ef-limite" min="0" step="1" value="${esc(evLimit(e))}"><span class="small muted" style="font-weight:400">Pelo menor preço de cada carta na LigaMagic.</span></label>
+    <label class="f">Temporada do ranking<input type="text" id="ef-temporada" maxlength="20" value="${esc(e.temporada || '')}" placeholder="${esc((e.data || '').slice(0, 4) || 'Ano do evento')}"></label>
+    <label class="check wide"><input type="checkbox" id="ef-fora" ${e.foraRanking ? 'checked' : ''}> Não contar este evento no ranking da temporada</label>`}
     <div class="wide row"><button class="btn primary" type="submit">${isNew ? 'Criar evento' : 'Salvar alterações'}</button>${isNew ? '<button class="btn" type="button" data-act="cancel-new">Cancelar</button>' : ''}</div>
   </form>`;
 }
+function lastPix() { return sortedEvents().filter(x => x.pixChave).pop() || {}; }
 function tabConfig(e) {
   return `<div class="panel">${eventForm(e, false)}</div>
     <div class="panel spread"><div><b>Apagar evento</b><div class="small muted">Remove o evento, os jogadores e todos os resultados.</div></div>${armBtn('del-event', 'Apagar evento', 'Confirmar exclusão')}</div>`;
@@ -969,6 +1180,7 @@ function formatEditor(f) {
     <label class="f">Melhor de<select id="ff-bo">${[1, 3, 5].map(n => `<option ${+f.bestOf === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
     <label class="f">Jogadores por pod / mesa<input type="number" id="ff-pod" min="2" max="10" value="${esc(f.podSize || 4)}"></label>
     <label class="f">Minutos por rodada<input type="number" id="ff-min" min="0" max="240" value="${esc(f.minutos || 50)}"></label>
+    <label class="f">Valor máximo do deck em R$ (0 = sem limite)<input type="number" id="ff-limite" min="0" step="1" value="${esc(limitOf(f, f.nome))}"></label>
     <label class="f">Pontos V / E / D<input type="text" id="ff-pts" value="${esc([f.pontos.v, f.pontos.e, f.pontos.d].join(' / '))}" placeholder="3 / 1 / 0"></label>
     <label class="f wide">Regras (uma por linha)<textarea id="ff-regras" style="min-height:180px">${esc(f.regras)}</textarea></label>
     <label class="f wide">Cartas banidas ou restritas (uma por linha)<textarea id="ff-banlist">${esc(f.banlist)}</textarea></label>
@@ -989,6 +1201,18 @@ function formatFromBase(k) {
 // ---------- eventos de interface ----------
 function readNum(id, d = 0) { const el = $('#' + id); if (!el) return d; const n = parseFloat(el.value); return isNaN(n) ? d : n; }
 function readStr(id) { const el = $('#' + id); return el ? el.value.trim() : ''; }
+function readList(e) {
+  const out = {};
+  if ($('#su-lista')) out.lista = $('#su-lista').value.trim();
+  if ($('#su-valor')) {
+    const v = parseFloat($('#su-valor').value), lim = evLimit(e);
+    if (isNaN(v) || v < 0) { toast('Informe o valor total do deck.'); return null; }
+    if (lim && v > lim) { toast(`O deck passa do limite de ${brl(lim)}. Ajuste a lista antes de enviar.`); return null; }
+    out.valor = Math.round(v * 100) / 100;
+  }
+  if (needList(e) && !out.lista) { toast('Cole a lista do deck.'); return null; }
+  return out;
+}
 
 document.addEventListener('click', async ev0 => {
   const t = ev0.target.closest('[data-nav],[data-open],[data-tab],[data-act],[data-approve],[data-drop],[data-editfmt],[data-copy],[data-lightbox],[data-lbnav],[data-lbclose],#brand');
@@ -1011,7 +1235,8 @@ document.addEventListener('click', async ev0 => {
     const uid = t.dataset.approve, reg = S.regs[uid];
     return mutate(e => {
       if (+e.vagas && e.players.length >= +e.vagas) toast('Atenção: o evento passou do limite de vagas.');
-      e.players.push({ id: E.rid(), nome: reg.nome, deck: reg.eventos[e.id].deck || '', regUid: uid, contato: reg.contato || '' });
+      const x = reg.eventos[e.id];
+      e.players.push({ id: E.rid(), nome: reg.nome, deck: x.deck || '', regUid: uid, contato: reg.contato || '', lista: x.lista || '', valor: x.valor });
     });
   }
   if (t.dataset.drop) return mutate(e => { const p = e.players.find(x => x.id === t.dataset.drop); p.dropped = !p.dropped; });
@@ -1028,6 +1253,25 @@ document.addEventListener('click', async ev0 => {
     try { const r = await S.downloads.save({ filename, data: blob }); if (r && r.status === 'saved') toast('Flyer salvo'); }
     catch (err) { if (err && err.code !== 'cancelled') toast('Não foi possível salvar o flyer.'); }
     return;
+  }
+  if (act === 'checkin-open' || act === 'checkin-close') return mutate(e => { e.checkinAberto = act === 'checkin-open'; });
+  if (act === 'drop-absent') { if (!armed(act)) return; return mutate(e => { let n = 0; e.players.forEach(p => { if (!p.dropped && !checkedIn(e, p)) { p.dropped = true; n++; } }); if (!n) return false; }).then(() => toast('Quem não fez check-in saiu dos pareamentos. Dá para reativar na lista.')); }
+  if (act === 'checkin') { const e = ev(); if (await saveMyRegEv(e, { checkin: Date.now() })) toast('Check-in feito. Bom jogo!'); return; }
+  if (act === 'checkin-name') {
+    const pid = readStr('ci-player'), e = ev(); if (!pid) { toast('Escolha seu nome na lista.'); return; }
+    const p = e.players.find(x => x.id === pid);
+    if (await saveMyRegEv(e, { checkin: Date.now(), checkinPlayer: pid }, p && p.nome)) toast('Check-in feito. Bom jogo!');
+    return;
+  }
+  if (act === 'paid-informed') { const e = ev(); if (await saveMyRegEv(e, { pagoInformado: Date.now() })) toast('Obrigado! A organização vai confirmar o pagamento.'); return; }
+  if (act === 'confirm-all') return mutate(e => {
+    const r = e.rounds[e.rounds.length - 1]; let n = 0;
+    r.matches.forEach(m => { if (E.done(m)) return; const v = agreedReport(e, r, m); if (v) { m.result = parseResult(v); n++; } });
+    if (!n) return false;
+  }).then(() => toast('Resultados confirmados'));
+  if (act.startsWith('confirm:')) {
+    const [, rn, mid] = act.split(':');
+    return mutate(e => { const r = e.rounds.find(x => x.n === +rn), m = r && r.matches.find(x => x.id === mid); const v = m && agreedReport(e, r, m); if (!v) return false; m.result = parseResult(v); }).then(() => toast('Resultado confirmado'));
   }
   if (act === 'edit-pairs') { S.editPairs = !S.editPairs; render(); return; }
   if (act === 'new-event') { S.view = 'admin'; S.newEvent = true; render(); window.scrollTo(0, 0); return; }
@@ -1073,14 +1317,18 @@ document.addEventListener('click', async ev0 => {
 document.addEventListener('change', ev0 => {
   const t = ev0.target;
   if (t.dataset.paid) return mutate(e => { const p = e.players.find(x => x.id === t.dataset.paid); p.pago = t.checked; });
+  if (t.dataset.checkin) return mutate(e => { const p = e.players.find(x => x.id === t.dataset.checkin); p.checkin = t.checked; });
+  if (t.dataset.report) {
+    const e = ev(), key = t.dataset.report, reports = Object.assign({}, (myRegEv(e) || {}).reports);
+    if (t.value) reports[key] = t.value; else delete reports[key];
+    return saveMyRegEv(e, { reports }).then(ok => { if (ok) toast(t.value ? 'Resultado enviado. A organização vai confirmar.' : 'Resultado retirado.'); });
+  }
+  if (t.id === 'rk-season') { S.season = t.value; render(); return; }
   if (t.dataset.result) {
     const [rn, mid] = t.dataset.result.split(':'), v = t.value;
     return mutate(e => {
       const m = e.rounds.find(r => r.n === +rn).matches.find(x => x.id === mid);
-      if (!v) m.result = null;
-      else if (v === 'draw') m.result = { draw: true };
-      else if (v.startsWith('w:')) m.result = { winner: v.slice(2) };
-      else { const [a, b, d] = v.split('-').map(Number); m.result = { a, b, d }; }
+      m.result = parseResult(v);
       const later = e.rounds.findIndex(r => r.n === +rn) < e.rounds.length - 1;
       if (later) toast('Resultado alterado numa rodada anterior. Os pareamentos já gerados não mudam.');
     });
@@ -1123,10 +1371,17 @@ document.addEventListener('submit', async ev0 => {
     render();
     return;
   }
+  if (f.id === 'my-list') {
+    const e = ev(), x = readList(e); if (!x) return;
+    document.activeElement && document.activeElement.blur();
+    if (await saveMyRegEv(e, x)) toast('Lista salva');
+    return;
+  }
   if (f.id === 'signup') {
     const nome = readStr('su-nome'); if (!nome) return;
+    const lst = readList(ev()); if (!lst) return;
     const r = clone(S.myReg || { eventos: {} }); r.nome = nome; r.contato = readStr('su-contato'); r.eventos = r.eventos || {};
-    r.eventos[S.eventId] = { deck: readStr('su-deck'), em: Date.now() };
+    r.eventos[S.eventId] = Object.assign({}, r.eventos[S.eventId], { deck: readStr('su-deck'), em: Date.now() }, lst);
     S.myReg = r; document.activeElement && document.activeElement.blur(); render();
     try { await store.save('regs', S.uid, r); toast('Inscrição enviada. A organização vai confirmar.'); } catch (e) {}
     return;
@@ -1138,6 +1393,8 @@ document.addEventListener('submit', async ev0 => {
     const e = {
       id: E.rid(), nome: readStr('ef-nome'), data: readStr('ef-data'), hora: readStr('ef-hora'), local: readStr('ef-local'), cidade: readStr('ef-cidade'),
       vagas: readNum('ef-vagas'), taxa: readNum('ef-taxa'), contato: readStr('ef-contato'), premiacao: readStr('ef-premiacao'), descricao: readStr('ef-descricao'),
+      pixChave: readStr('ef-pix'), pixNome: readStr('ef-pixnome'), pixCidade: readStr('ef-pixcidade'),
+      limiteValor: limitOf(fm, fm.nome), pedirLista: limitOf(fm, fm.nome) > 0,
       formatoId: fm.id, formatoNome: fm.nome, base: fm.base, mana: (BASES[fm.base] || BASES.custom).mana, modo: fm.modo, estrutura: fm.estrutura, bestOf: +fm.bestOf,
       podSize: +fm.podSize || 4, minutos: +fm.minutos || 50, pontos: clone(fm.pontos), regras: fm.regras, banlist: fm.banlist,
       rodadas: 0, topCut: 0, status: 'rascunho', mostrarDecks: fm.modo === 'multi', players: [], rounds: [], criadoEm: Date.now(),
@@ -1154,12 +1411,14 @@ document.addEventListener('submit', async ev0 => {
         status: readStr('ef-status'), rodadas: readNum('ef-rodadas'), topCut: readNum('ef-top'), bestOf: readNum('ef-bo', 3), podSize: readNum('ef-pod', 4),
         minutos: readNum('ef-min'), pontos: { v: readNum('ef-pv', 3), e: readNum('ef-pe', 1), d: readNum('ef-pd', 0) }, vagas: readNum('ef-vagas'), taxa: readNum('ef-taxa'),
         contato: readStr('ef-contato'), premiacao: readStr('ef-premiacao'), descricao: readStr('ef-descricao'), regras: $('#ef-regras').value, banlist: $('#ef-banlist').value,
-        mostrarDecks: $('#ef-decks').checked });
+        mostrarDecks: $('#ef-decks').checked, pixChave: readStr('ef-pix'), pixNome: readStr('ef-pixnome'), pixCidade: readStr('ef-pixcidade'),
+        pedirLista: $('#ef-lista').checked, limiteValor: readNum('ef-limite', 0), temporada: readStr('ef-temporada'), foraRanking: $('#ef-fora').checked });
       const rf = readStr('ef-reformato');
       if (rf) {
         const fm = rf.startsWith('base:') ? formatFromBase(rf.slice(5)) : S.formats[rf];
         Object.assign(e, { formatoId: fm.id, formatoNome: fm.nome, base: fm.base, mana: (BASES[fm.base] || BASES.custom).mana, bestOf: +fm.bestOf,
-          podSize: +fm.podSize || 4, minutos: +fm.minutos || 50, pontos: clone(fm.pontos), regras: fm.regras, banlist: fm.banlist });
+          podSize: +fm.podSize || 4, minutos: +fm.minutos || 50, pontos: clone(fm.pontos), regras: fm.regras, banlist: fm.banlist,
+          limiteValor: limitOf(fm, fm.nome), pedirLista: limitOf(fm, fm.nome) > 0 || e.pedirLista });
         if (!e.rounds.length) { e.estrutura = fm.estrutura; e.modo = fm.modo; }
       } else if (!e.rounds.length) { e.estrutura = readStr('ef-estrutura'); if (e.estrutura === 'pods') e.modo = 'multi'; else e.modo = '1v1'; }
     }).then(() => { toast('Alterações salvas'); S.tab = 'info'; render(); window.scrollTo(0, 0); });
@@ -1168,7 +1427,7 @@ document.addEventListener('submit', async ev0 => {
     const base = S.formatId === 'new' ? S.formatDraft : S.formats[S.formatId];
     const [v, e, d] = readStr('ff-pts').split(/[\/,;\s]+/).filter(Boolean).map(Number);
     const x = Object.assign(clone(base), { nome: readStr('ff-nome'), modo: readStr('ff-modo'), estrutura: readStr('ff-estrutura'), bestOf: readNum('ff-bo', 3), podSize: readNum('ff-pod', 4),
-      minutos: readNum('ff-min', 50), pontos: { v: isNaN(v) ? 3 : v, e: isNaN(e) ? 1 : e, d: isNaN(d) ? 0 : d }, regras: $('#ff-regras').value, banlist: $('#ff-banlist').value });
+      minutos: readNum('ff-min', 50), limiteValor: readNum('ff-limite', 0), pontos: { v: isNaN(v) ? 3 : v, e: isNaN(e) ? 1 : e, d: isNaN(d) ? 0 : d }, regras: $('#ff-regras').value, banlist: $('#ff-banlist').value });
     document.activeElement && document.activeElement.blur();
     S.formats[x.id] = x; S.formatId = null; render();
     try { await store.save('formats', x.id, x); toast('Formato salvo'); } catch (err) {}
@@ -1195,6 +1454,13 @@ function startWatching() {
   if (S.admin) store.watch('regs', d => { S.regs = d; S.myReg = S.uid ? d[S.uid] || null : null; render(); });
   else if (S.mode === 'db' && S.uid) S.db.doc('regs/' + S.uid).onSnapshot(s => { S.myReg = s.exists ? clone(s.data()) : null; render(); }, () => {});
 }
+// links diretos: #evento/<id> e #checkin/<id>
+function routeFromHash() {
+  const m = location.hash.match(/^#(evento|checkin)\/([\w-]+)/);
+  if (!m) return;
+  S.view = 'event'; S.eventId = m[2]; S.tab = 'info'; watchMedia(S.eventId);
+}
+window.addEventListener('hashchange', () => { routeFromHash(); render(); window.scrollTo(0, 0); });
 async function boot() {
   render();
   let db = null, user = null;
@@ -1209,7 +1475,7 @@ async function boot() {
       try { const c = await user.can('data.write'); S.canWrite = c !== false; } catch (e) { S.canWrite = true; }
     }
   } else { S.mode = 'local'; S.admin = true; S.canWrite = true; S.uid = 'local'; }
-  if (S.admin && S.view === 'home' && !location.hash) S.view = 'home';
+  routeFromHash();
   startWatching();
   render();
 }
