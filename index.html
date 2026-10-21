@@ -1132,6 +1132,11 @@ function tabRounds(e) {
     h += `<div class="panel spread"><div class="stack" style="gap:2px"><b>Divulgar as mesas</b><span class="small muted">${last ? 'Mande as mesas da rodada no grupo ou deixe o telão aberto numa TV.' : 'Deixe o telão aberto numa TV: ele mostra o check-in, as mesas, o relógio e a classificação.'}</span></div>
       <div class="row">${last ? `<button class="btn sm" data-copy="round">Copiar mesas</button><a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(roundText(e, last))}">Enviar no WhatsApp</a>` : ''}<a class="btn sm primary" target="_blank" rel="noopener" href="${esc(eventLink(e, 'telao'))}">Abrir telão</a></div>
       ${last ? `<div id="copy-round" hidden>${esc(roundText(e, last))}</div>` : ''}</div>`;
+    const win = e.rounds.length ? eventWinner(e) || champion(e) || (finished && !isElim(e) ? (E.standings(e, 'main').filter(x => !x.p.espera)[0] || {}).p?.id : null) : null;
+    if (e.status === 'encerrado' && e.rounds.length) h = `<div class="panel spread" style="border-color:var(--brand)"><div class="stack" style="gap:2px"><b>Evento finalizado</b><span class="small muted">${win ? 'Campeão: ' + esc(pname(e, win)) + '. ' : ''}A classificação final e a arte do resultado já estão prontas.</span></div>
+      <div class="row"><button class="btn primary" data-tab="divulgar">Ver arte do resultado</button>${armBtn('reopen-event', 'Reabrir evento', 'Confirmar reabertura')}</div></div>` + h;
+    else if (finished) h = `<div class="panel spread" style="border-color:var(--brand)"><div class="stack" style="gap:2px"><b>Última rodada concluída</b><span class="small muted">${win ? 'Campeão: ' + esc(pname(e, win)) + '. ' : ''}Finalize o evento para fechar a classificação, liberar a arte do resultado e pedir a avaliação dos jogadores.</span></div>
+      <div class="row"><button class="btn primary" data-act="finish-event">${S.armed === 'finish-event' ? 'Confirmar: finalizar evento' : 'Finalizar evento'}</button></div></div>` + h;
   }
   if (!e.rounds.length) return h + `<div class="empty">${e.players.length < 2 ? 'Adicione pelo menos 2 jogadores para gerar a primeira rodada.' : 'As rodadas aparecem aqui assim que a organização gerar os pareamentos.'}</div>`;
   e.rounds.slice().reverse().forEach((r, idx) => {
@@ -1842,6 +1847,8 @@ document.addEventListener('click', async ev0 => {
     if (!+e.rodadas && !isElim(e)) e.rodadas = E.suggestedRounds(e.players.filter(p => !p.dropped).length, e.estrutura);
     if (e.status !== 'andamento' && e.status !== 'encerrado') e.status = 'andamento';
   }).then(() => { S.tab = 'rodadas'; render(); });
+  if (act === 'finish-event') { if (!armed(act)) return; return mutate(e => { e.status = 'encerrado'; e.checkinAberto = false; }).then(() => toast('Evento finalizado! A arte do resultado está na aba Divulgar.')); }
+  if (act === 'reopen-event') { if (!armed(act)) return; return mutate(e => { e.status = 'andamento'; }).then(() => toast('Evento reaberto.')); }
   if (act === 'cut') return mutate(e => { e.rounds.push(E.startCut(e)); });
   if (act === 'draft-pods') return mutate(e => { E.assignDraftPods(e); }).then(() => toast('Mesas de draft sorteadas'));
   if (act === 'clock') return mutate(e => { e.rounds[e.rounds.length - 1].inicio = Date.now(); });
