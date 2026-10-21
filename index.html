@@ -77,6 +77,23 @@ h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.15; }
 .fab-menu button[aria-current="true"] { background: var(--brand); color: #111111; }
 #app { padding-bottom: 96px; }
 body.tv .fab, body.tv .fab-menu { display: none; }
+body.vida .top { display: none; } body.vida #app { max-width: none; padding: 0; } body.vida .fab { opacity: .5; }
+body.vida { overscroll-behavior: none; }
+.vida-board { display: grid; gap: 6px; height: calc(100dvh - 58px); padding: 6px; padding-top: max(6px, env(safe-area-inset-top, 0px)); }
+.vida-p { position: relative; border-radius: 18px; overflow: hidden; background: color-mix(in srgb, var(--pc) 22%, #111); border: 2px solid var(--pc); user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+.vida-p.flip { transform: rotate(180deg); }
+.vida-p.morto { filter: grayscale(.8) brightness(.6); }
+.vida-half { position: absolute; top: 0; bottom: 0; width: 50%; border: 0; background: transparent; color: rgba(255,255,255,.35); font-size: 40px; font-weight: 700; cursor: pointer; padding: 0 18px; }
+.vida-half.menos { left: 0; text-align: left; } .vida-half.mais { right: 0; text-align: right; }
+.vida-half:active { background: rgba(255,255,255,.08); }
+.vida-info { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; gap: 0; }
+.vida-nome { font-weight: 700; font-size: 16px; color: #fff; opacity: .9; }
+.vida-num { font-family: var(--f-display); font-weight: 900; font-size: clamp(64px, 18vmin, 160px); line-height: 1; color: #fff; }
+.vida-d { font-weight: 700; font-size: 20px; color: var(--pc); min-height: 26px; }
+.vida-ven { color: #9fd67a; font-weight: 700; }
+.vida-quick { position: absolute; left: 0; right: 0; bottom: 8px; display: flex; justify-content: center; gap: 8px; }
+.vida-quick button { background: rgba(0,0,0,.45); color: #fff; border: 1px solid rgba(255,255,255,.2); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.vida-bar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding: 8px 80px 8px 8px; }
 @media (max-width: 560px) { .brand img { height: 92px; } }
 .top :focus-visible { outline-color: #111111; }
 .top-text { flex: 1 1 0; min-width: 0; display: grid; gap: 6px; }
@@ -330,7 +347,7 @@ const S = {
   events: {}, formats: {}, regs: {}, myReg: null,
   view: 'home', eventId: null, tab: 'info', formatId: null, newEvent: false,
   installHidden: (() => { try { return sessionStorage.getItem('md-install-hide') === '1'; } catch (e) { return false; } })(),
-  armed: null, pendingRender: false, assets: null, media: [], mediaSub: null, lightbox: null, emblema: null, embPt: false, elxOpen: null, metaFmt: '', seenRound: {}, uploading: '',
+  armed: null, pendingRender: false, assets: null, media: [], mediaSub: null, lightbox: null, emblema: null, embPt: false, vida: vidaLoad(), elxOpen: null, metaFmt: '', seenRound: {}, uploading: '',
 };
 
 // ---------- armazenamento (db compartilhado, ou local quando indisponível) ----------
@@ -549,6 +566,7 @@ function render() {
   if (a && a.closest && a.closest('#app') && a.matches('input[type=text],input[type=number],input[type=date],input[type=time],textarea')) { S.pendingRender = true; return; }
   S.pendingRender = false;
   document.body.classList.toggle('tv', S.view === 'telao');
+  document.body.classList.toggle('vida', S.view === 'vida' && !!S.vida);
   renderNav();
   const app = $('#app');
   let html = '';
@@ -561,6 +579,7 @@ function render() {
     else if (S.view === 'login' && window.MD_AUTH) html += viewLogin();
     else if (S.view === 'ranking') html += viewRanking();
     else if (S.view === 'meta') html += viewMeta();
+    else if (S.view === 'vida') html += viewVida();
     else if (S.view === 'perfil') html += viewPerfil();
     else if (S.view === 'telao') html += viewTelao();
     else html += viewHome();
@@ -576,7 +595,7 @@ document.addEventListener('focusout', () => setTimeout(() => { if (S.pendingRend
 function renderNav() {
   const items = [['home', 'Eventos']];
   if (S.admin) items.push(['admin', 'Organizar'], ['formats', 'Formatos e regras']);
-  items.push(['ranking', 'Ranking'], ['meta', 'Meta']);
+  items.push(['ranking', 'Ranking'], ['meta', 'Meta'], ['vida', 'Contador de vida']);
   $('#nav').innerHTML = items.map(([v, l]) => `<button data-nav="${v}" aria-current="${S.view === v || (v === 'home' && S.view === 'event' && !S.admin)}">${l}</button>`).join('')
     + (S.admin ? '<button data-act="new-event">Criar evento</button>' : '')
     + (window.MD_AUTH && S.mode === 'db' ? (S.admin ? '<button data-act="logout">Sair</button>' : `<button data-nav="login" aria-current="${S.view === 'login'}">Organizador</button>`) : '');
@@ -740,6 +759,57 @@ function viewMeta() {
       <tbody>${rows.map(r => `<tr><td><b>${esc(r.nome)}</b></td><td class="r num">${r.n}</td><td class="r num">${Math.round(r.n / total * 100)}%</td><td class="r num">${r.jogadores.size}</td><td class="r num">${r.titulos || ''}</td><td class="r num">${r.w}-${r.l}-${r.d}</td><td class="r num">${wr(r)}</td></tr>`).join('')}</tbody></table></div></div>
     <p class="small muted" style="margin:0">Soma os decks que os jogadores informaram na inscrição, em todos os eventos já realizados${S.admin ? '' : ' que mostram os decks ao público'}. Decks com o mesmo nome são agrupados.</p>`
     : `<div class="empty">Ainda não há decks para mostrar. Eles aparecem aqui quando os jogadores informam o deck na inscrição${S.admin ? '' : ' e o evento tem "Mostrar os decks dos jogadores" ligado'}.</div>`}`;
+}
+
+// ---------- contador de vida (fica só neste aparelho) ----------
+const VIDA_CORES = ['#e0503a', '#3a9be0', '#3fa35a', '#9a6bc4', '#f6b210', '#e07ab0'];
+function vidaLoad() { try { return JSON.parse(localStorage.getItem('md-vida') || 'null'); } catch (err) { return null; } }
+function vidaSave() { try { if (S.vida) localStorage.setItem('md-vida', JSON.stringify(S.vida)); else localStorage.removeItem('md-vida'); } catch (err) {} }
+const vidaInicial = e => e && ['commander', 'cedh'].includes(e.base) ? 40 : 20;
+function vidaNova(nomes, vida) {
+  S.vida = { inicial: vida, jogadores: nomes.map((n, i) => ({ nome: n || 'Jogador ' + (i + 1), vida, veneno: 0 })), log: [] };
+  vidaSave();
+}
+function viewVida() {
+  const v = S.vida;
+  if (!v) {
+    const n = S.vidaN || 2, ini = S.vidaIni || 20;
+    return `<div class="panel stack" style="max-width:560px;margin:0 auto"><div><div class="eyebrow">Ferramenta da mesa</div><h1 class="display" style="font-size:30px">Contador de vida</h1></div>
+      <p class="muted" style="margin:0">Deixe o celular no meio da mesa. Cada jogador toca no próprio lado para tirar ou somar vida.</p>
+      <div class="f">Jogadores<div class="row">${[2, 3, 4, 5, 6].map(k => `<button class="btn sm ${k === n ? 'primary' : ''}" data-act="vida-n:${k}">${k}</button>`).join('')}</div></div>
+      <div class="f">Vida inicial<div class="row">${[20, 30, 40].map(k => `<button class="btn sm ${k === ini ? 'primary' : ''}" data-act="vida-ini:${k}">${k}</button>`).join('')}</div></div>
+      <div class="form">${Array.from({ length: n }, (_, i) => `<label class="f">Jogador ${i + 1}<input type="text" id="vida-nome-${i}" maxlength="24" placeholder="Jogador ${i + 1}" value="${esc((S.vidaNomes || [])[i] || '')}"></label>`).join('')}</div>
+      <div><button class="btn primary" data-act="vida-start">Começar partida</button></div></div>`;
+  }
+  const js = v.jogadores, n = js.length, cols = n <= 2 ? 1 : 2, rows = Math.ceil(n / cols);
+  const now = Date.now();
+  return `<div class="vida-board" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${rows},minmax(0,1fr))">${js.map((j, i) => {
+    const flip = n > 1 && i < cols * Math.floor(rows / 2), span = cols === 2 && n % 2 && i === n - 1;
+    const d = j.delta && now - j.deltaEm < 1800 ? j.delta : 0;
+    const morto = j.vida <= 0 || j.veneno >= 10;
+    return `<div class="vida-p ${flip ? 'flip' : ''} ${morto ? 'morto' : ''}" style="--pc:${VIDA_CORES[i % VIDA_CORES.length]}${span ? ';grid-column:1 / -1' : ''}">
+      <button class="vida-half menos" data-vida="${i}:-1" aria-label="Tirar 1 de vida de ${esc(j.nome)}">−</button>
+      <button class="vida-half mais" data-vida="${i}:1" aria-label="Somar 1 de vida para ${esc(j.nome)}">+</button>
+      <div class="vida-info"><div class="vida-nome">${esc(j.nome)}</div><div class="vida-num num">${j.vida}</div>
+        <div class="vida-d num">${d ? (d > 0 ? '+' : '−') + Math.abs(d) : '&nbsp;'}</div>
+        ${j.veneno ? `<div class="vida-ven small">Veneno ${j.veneno}</div>` : ''}</div>
+      <div class="vida-quick"><button data-vida="${i}:-5">−5</button><button data-vida="${i}:5">+5</button><button data-vida="${i}:p" title="Marcador de veneno">☠ +1</button></div>
+    </div>`;
+  }).join('')}</div>
+  <div class="vida-bar"><button class="btn sm" data-act="vida-undo" ${v.log.length ? '' : 'disabled'}>Desfazer</button>${armBtn('vida-reset', 'Reiniciar', 'Confirmar reinício')}<button class="btn sm" data-act="vida-new">Nova partida</button><button class="btn sm" data-act="vida-exit">Sair</button></div>`;
+}
+let vidaTimer = null;
+function vidaMuda(i, d) {
+  const v = S.vida, j = v.jogadores[i]; if (!j) return;
+  if (d === 'p') { j.veneno = (j.veneno || 0) + 1; v.log.push({ i, p: 1 }); }
+  else {
+    j.vida += d; v.log.push({ i, d });
+    j.delta = j.deltaEm && Date.now() - j.deltaEm < 1800 ? (j.delta || 0) + d : d; j.deltaEm = Date.now();
+  }
+  if (v.log.length > 300) v.log.shift();
+  try { if (navigator.vibrate) navigator.vibrate(12); } catch (err) {}
+  vidaSave(); render();
+  clearTimeout(vidaTimer); vidaTimer = setTimeout(() => { if (S.view === 'vida') render(); }, 1900);
 }
 
 // ---------- telão ----------
@@ -974,7 +1044,7 @@ function myTableCard(e, me) {
   return `<div class="panel" style="border-color:var(--gold)"><div class="eyebrow">Sua mesa · rodada ${r.n}</div>
     <div class="display" style="font-size:22px">${m.bye ? 'Bye' : m.wait ? 'Aguardando' : 'Mesa ' + m.mesa}</div>
     <div class="muted">${m.bye ? 'Vitória automática nesta rodada.' : m.wait ? 'Você avança sem jogar nesta rodada.' : 'Contra ' + others.join(', ')}</div>
-    ${!m.bye && !m.wait ? `<div style="margin-top:10px">${m.result ? resultLabel(e, m) : reportInput(e, r, m)}</div>` : ''}${elixirTracker(e, r, m, me)}${notifyBtn(e) ? `<div style="margin-top:10px">${notifyBtn(e)}</div>` : ''}</div>`;
+    ${!m.bye && !m.wait ? `<div style="margin-top:10px">${m.result ? resultLabel(e, m) : reportInput(e, r, m)}</div>` : ''}${!m.bye && !m.wait && !m.result && e.status !== 'encerrado' ? `<div style="margin-top:10px"><button class="btn sm primary" data-act="vida-mesa">Abrir contador de vida</button></div>` : ''}${elixirTracker(e, r, m, me)}${notifyBtn(e) ? `<div style="margin-top:10px">${notifyBtn(e)}</div>` : ''}</div>`;
 }
 
 function tabPlayers(e) {
@@ -1725,13 +1795,14 @@ function readList(e) {
 document.addEventListener('click', async ev0 => {
   if (ev0.target.closest('#fab')) { S.menuOpen = !S.menuOpen; renderNav(); if (S.menuOpen) { const b = $('#nav button'); if (b) b.focus(); } return; }
   if (S.menuOpen) { S.menuOpen = false; renderNav(); }
-  const t = ev0.target.closest('[data-nav],[data-open],[data-tab],[data-act],[data-approve],[data-drop],[data-editfmt],[data-copy],[data-lightbox],[data-lbnav],[data-lbclose],[data-emb],[data-embnav],[data-embclose],[data-perfil],[data-tvexit],#brand');
+  const t = ev0.target.closest('[data-nav],[data-open],[data-tab],[data-act],[data-approve],[data-drop],[data-editfmt],[data-copy],[data-lightbox],[data-lbnav],[data-lbclose],[data-emb],[data-embnav],[data-embclose],[data-vida],[data-perfil],[data-tvexit],#brand');
   if (!t) return;
   if (t.id === 'brand') { S.view = 'home'; render(); return; }
   if (t.dataset.nav) { S.view = t.dataset.nav; S.newEvent = false; render(); window.scrollTo(0, 0); return; }
   if (t.dataset.open) { ev0.preventDefault(); S.view = 'event'; S.eventId = t.dataset.open; S.tab = 'info'; watchMedia(S.eventId); render(); window.scrollTo(0, 0); return; }
   if (t.dataset.perfil) { ev0.preventDefault(); S.view = 'perfil'; S.perfil = t.dataset.perfil; render(); window.scrollTo(0, 0); return; }
   if (t.hasAttribute('data-tvexit')) { if (/^#telao\//.test(location.hash)) history.replaceState(null, '', location.pathname); S.view = ev() ? 'event' : 'home'; render(); return; }
+  if (t.dataset.vida) { const [i, d] = t.dataset.vida.split(':'); vidaMuda(+i, d === 'p' ? 'p' : +d); return; }
   if (t.dataset.emb) { S.emblema = +t.dataset.emb; render(); return; }
   if (t.dataset.embnav) { const i = S.emblema + +t.dataset.embnav; if (EMBLEMAS[i]) S.emblema = i; render(); return; }
   if (t.hasAttribute('data-embclose')) { S.emblema = null; render(); return; }
@@ -1802,6 +1873,26 @@ document.addEventListener('click', async ev0 => {
     return mutate(e => { const r = e.rounds.find(x => x.n === +rn), m = r && r.matches.find(x => x.id === mid); const v = m && agreedReport(e, r, m); if (!v) return false; m.result = parseResult(v); }).then(() => toast('Resultado confirmado'));
   }
   if (act === 'install') { if (!installPrompt) return; installPrompt.prompt(); try { await installPrompt.userChoice; } catch (err) {} installPrompt = null; render(); return; }
+  if (act.startsWith('vida-n:') || act.startsWith('vida-ini:')) {
+    S.vidaNomes = [...document.querySelectorAll('[id^="vida-nome-"]')].map(x => x.value.trim());
+    if (act.startsWith('vida-n:')) S.vidaN = +act.slice(7); else S.vidaIni = +act.slice(9);
+    render(); return;
+  }
+  if (act === 'vida-start') { const n = S.vidaN || 2; vidaNova(Array.from({ length: n }, (_, i) => readStr('vida-nome-' + i)), S.vidaIni || 20); render(); window.scrollTo(0, 0); return; }
+  if (act === 'vida-undo') {
+    const v = S.vida, x = v && v.log.pop(); if (!x) return;
+    const j = v.jogadores[x.i]; if (x.p) j.veneno = Math.max(0, (j.veneno || 0) - 1); else { j.vida -= x.d; j.delta = 0; }
+    vidaSave(); render(); return;
+  }
+  if (act === 'vida-reset') { if (!armed(act)) return; S.vida.jogadores.forEach(j => { j.vida = S.vida.inicial; j.veneno = 0; j.delta = 0; }); S.vida.log = []; vidaSave(); render(); return; }
+  if (act === 'vida-new') { S.vidaNomes = S.vida.jogadores.map(j => j.nome); S.vidaN = S.vida.jogadores.length; S.vidaIni = S.vida.inicial; S.vida = null; vidaSave(); render(); return; }
+  if (act === 'vida-exit') { S.view = 'home'; render(); return; }
+  if (act === 'vida-mesa') {
+    const e = ev(), me = myPlayer(e), r = e.rounds[e.rounds.length - 1], m = r && r.matches.find(x => x.players.includes(me.id)); if (!m) return;
+    const ids = [me.id].concat(m.players.filter(x => x !== me.id));
+    S.vidaN = ids.length; S.vidaIni = vidaInicial(e);
+    vidaNova(ids.map(id => pname(e, id)).reverse(), vidaInicial(e)); S.view = 'vida'; render(); window.scrollTo(0, 0); return;
+  }
   if (act === 'notify-on') { try { const r = await Notification.requestPermission(); toast(r === 'granted' ? 'Pronto! Você vai receber um aviso quando sair sua mesa.' : 'Sem permissão para avisos. Você ainda vê a mesa aqui no site.'); } catch (err) {} render(); return; }
   if (act === 'emb-pt') { S.embPt = !S.embPt; render(); return; }
   if (act === 'ics') { const e = ev(); saveFile(new Blob([icsText(e)], { type: 'text/calendar' }), 'magic-drink-' + (e.data || 'evento') + '.ics'); return; }
@@ -2045,6 +2136,7 @@ function startWatching() {
 }
 // links diretos: #evento/<id> e #checkin/<id>
 function routeFromHash() {
+  if (location.hash === '#vida') { S.view = 'vida'; return; }
   const m = location.hash.match(/^#(evento|checkin|telao)\/([\w-]+)/);
   if (!m) return;
   S.view = m[1] === 'telao' ? 'telao' : 'event'; S.eventId = m[2]; S.tab = 'info'; watchMedia(S.eventId);

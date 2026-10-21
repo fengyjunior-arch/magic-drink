@@ -51,6 +51,7 @@ Abra o site, clique em **Organizador** e entre com o e-mail e a senha do passo 1
 - **Arte do resultado**: na aba Divulgar, depois que o evento começa, aparece a imagem com campeão, pódio, decks e quem mais bebeu Elixir, no tamanho escolhido para o flyer.
 - **Avaliação do evento**: quando o evento é encerrado, quem se inscreveu pelo site vê o pedido de nota (1 a 5) e comentário. As respostas aparecem só para a organização, na Visão geral do evento.
 - **Agenda**: na página do evento, "Salvar na agenda do celular" baixa um arquivo .ics e "Google Agenda" abre o evento já preenchido.
+- **Contador de vida**: no menu, para 2 a 6 jogadores, vida inicial 20/30/40, veneno, desfazer e nova partida, salvo no próprio celular. Na mesa do jogador, "Abrir contador de vida" já traz os nomes e a vida do formato (40 no Commander).
 - **Conquistas e confrontos**: o perfil do jogador mostra selos como Campeão, Pódio, Invicto, Veterano e Copo sem fundo, e o placar contra cada adversário, com o freguês e o carrasco.
 
 ## Instalar como app
